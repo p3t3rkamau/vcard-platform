@@ -6,6 +6,8 @@ import styles from "./profile.module.scss";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
+export const dynamic = "force-dynamic";
+
 async function getCard(slug: string) {
   return prisma.businessCard.findFirst({
     where: { slug, status: "PUBLISHED", deletedAt: null },
