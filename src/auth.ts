@@ -1,12 +1,61 @@
 import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import { compare } from "bcryptjs";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 
-// Add the chosen sign-in providers before enabling authentication in the UI.
+const credentialsSchema = z.object({
+  email: z.string().trim().email().max(254),
+  password: z.string().min(1).max(128),
+});
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  providers: [],
+  providers: [
+    Credentials({
+      name: "Email and password",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const parsed = credentialsSchema.safeParse(credentials);
+        if (!parsed.success) return null;
+
+        const email = parsed.data.email.toLowerCase();
+        const user = await prisma.user.findUnique({ where: { email } });
+
+        if (!user?.passwordHash || !user.emailVerified) return null;
+
+        const passwordIsValid = await compare(parsed.data.password, user.passwordHash);
+        if (!passwordIsValid) return null;
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          image: user.image,
+        };
+      },
+    }),
+  ],
   session: {
-    strategy: "database",
+    // Auth.js Credentials provider requires JWT sessions.
+    strategy: "jwt",
+    maxAge: 60 * 60 * 24 * 30,
+  },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) token.sub = user.id;
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user && token.sub) session.user.id = token.sub;
+      return session;
+    },
+  },
+  pages: {
+    signIn: "/login",
   },
 });
