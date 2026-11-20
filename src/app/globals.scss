@@ -1,0 +1,38 @@
+:root {
+  color-scheme: light;
+  --color-background: #f5f7fb;
+  --color-surface: #ffffff;
+  --color-text: #101828;
+  --color-muted: #667085;
+  --color-border: #e4e7ec;
+  --color-primary: #3157d5;
+  --font-sans: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+}
