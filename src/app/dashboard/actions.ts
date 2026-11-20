@@ -177,6 +177,34 @@ export async function duplicateBusinessCard(formData: FormData) {
   redirect(`/dashboard/cards/${duplicate.id}/edit?duplicated=1`);
 }
 
+export async function publishBusinessCard(formData: FormData) {
+  const userId = await requireUserId();
+  const cardId = String(formData.get("cardId") ?? "");
+  const card = await prisma.businessCard.findFirst({
+    where: { id: cardId, ownerId: userId, deletedAt: null },
+    select: { id: true, displayName: true },
+  });
+
+  if (!card || !card.displayName?.trim()) redirect("/dashboard?error=publish");
+  await prisma.businessCard.update({
+    where: { id: card.id },
+    data: { status: "PUBLISHED", publishedAt: new Date() },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/p/${cardId}`);
+}
+
+export async function unpublishBusinessCard(formData: FormData) {
+  const userId = await requireUserId();
+  const cardId = String(formData.get("cardId") ?? "");
+  await prisma.businessCard.updateMany({
+    where: { id: cardId, ownerId: userId, deletedAt: null },
+    data: { status: "DRAFT" },
+  });
+  revalidatePath("/dashboard");
+}
+
 export async function archiveBusinessCard(formData: FormData) {
   const userId = await requireUserId();
   const cardId = String(formData.get("cardId") ?? "");
