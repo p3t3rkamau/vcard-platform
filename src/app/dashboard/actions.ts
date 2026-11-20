@@ -240,3 +240,120 @@ export async function deleteBusinessCard(formData: FormData) {
 
   revalidatePath("/dashboard");
 }
+
+
+const contactSchema = z.object({
+  cardId: z.string().min(1),
+  type: z.enum(["PHONE", "EMAIL", "WHATSAPP", "WEBSITE", "ADDRESS", "OTHER"]),
+  label: z.string().trim().max(40).optional().default(""),
+  value: z.string().trim().min(2).max(254),
+});
+
+const socialSchema = z.object({
+  cardId: z.string().min(1),
+  platform: z.enum(["WhatsApp", "Facebook", "Instagram", "LinkedIn", "X", "TikTok", "YouTube", "Telegram", "Snapchat", "Pinterest", "GitHub", "Behance", "Dribbble", "Threads", "Other"]),
+  label: z.string().trim().max(40).optional().default(""),
+  url: z.string().trim().url().max(500),
+});
+
+async function requireOwnedCard(cardId: string, userId: string) {
+  return prisma.businessCard.findFirst({
+    where: { id: cardId, ownerId: userId, deletedAt: null },
+    select: { id: true },
+  });
+}
+
+function isSafeWebUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
+export async function addContactMethod(formData: FormData) {
+  const userId = await requireUserId();
+  const parsed = contactSchema.safeParse({
+    cardId: formData.get("cardId"),
+    type: formData.get("type"),
+    label: formData.get("label") ?? "",
+    value: formData.get("value"),
+  });
+  if (!parsed.success) redirect("/dashboard?error=contact");
+
+  const card = await requireOwnedCard(parsed.data.cardId, userId);
+  if (!card) redirect("/dashboard");
+  if (parsed.data.type === "EMAIL" && !z.email().safeParse(parsed.data.value).success) {
+    redirect("/dashboard/cards/" + card.id + "/edit?error=contact");
+  }
+  if (parsed.data.type === "WEBSITE" && !isSafeWebUrl(parsed.data.value)) {
+    redirect("/dashboard/cards/" + card.id + "/edit?error=contact");
+  }
+
+  const sortOrder = await prisma.contactMethod.count({ where: { businessCardId: card.id } });
+  await prisma.contactMethod.create({
+    data: {
+      businessCardId: card.id,
+      type: parsed.data.type,
+      label: parsed.data.label || null,
+      value: parsed.data.value,
+      isPrimary: sortOrder === 0,
+      sortOrder,
+    },
+  });
+  revalidatePath("/dashboard/cards/" + card.id + "/edit");
+  revalidatePath("/dashboard");
+  redirect("/dashboard/cards/" + card.id + "/edit?contact=added");
+}
+
+export async function removeContactMethod(formData: FormData) {
+  const userId = await requireUserId();
+  const cardId = String(formData.get("cardId") ?? "");
+  const methodId = String(formData.get("methodId") ?? "");
+  const card = await requireOwnedCard(cardId, userId);
+  if (!card) redirect("/dashboard");
+  await prisma.contactMethod.deleteMany({ where: { id: methodId, businessCardId: card.id } });
+  revalidatePath("/dashboard/cards/" + card.id + "/edit");
+}
+
+export async function addSocialLink(formData: FormData) {
+  const userId = await requireUserId();
+  const parsed = socialSchema.safeParse({
+    cardId: formData.get("cardId"),
+    platform: formData.get("platform"),
+    label: formData.get("label") ?? "",
+    url: formData.get("url"),
+  });
+  if (!parsed.success) redirect("/dashboard?error=social");
+
+  const card = await requireOwnedCard(parsed.data.cardId, userId);
+  if (!card) redirect("/dashboard");
+  if (!isSafeWebUrl(parsed.data.url)) {
+    redirect("/dashboard/cards/" + card.id + "/edit?error=social");
+  }
+
+  const sortOrder = await prisma.socialLink.count({ where: { businessCardId: card.id } });
+  await prisma.socialLink.create({
+    data: {
+      businessCardId: card.id,
+      platform: parsed.data.platform,
+      label: parsed.data.label || null,
+      url: parsed.data.url,
+      sortOrder,
+    },
+  });
+  revalidatePath("/dashboard/cards/" + card.id + "/edit");
+  revalidatePath("/dashboard");
+  redirect("/dashboard/cards/" + card.id + "/edit?social=added");
+}
+
+export async function removeSocialLink(formData: FormData) {
+  const userId = await requireUserId();
+  const cardId = String(formData.get("cardId") ?? "");
+  const socialId = String(formData.get("socialId") ?? "");
+  const card = await requireOwnedCard(cardId, userId);
+  if (!card) redirect("/dashboard");
+  await prisma.socialLink.deleteMany({ where: { id: socialId, businessCardId: card.id } });
+  revalidatePath("/dashboard/cards/" + card.id + "/edit");
+}
