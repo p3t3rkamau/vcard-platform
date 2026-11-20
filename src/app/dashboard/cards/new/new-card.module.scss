@@ -53,7 +53,8 @@
     color: #d92d20;
   }
 
-  input {
+  input,
+  textarea {
     width: 100%;
     min-height: 47px;
     padding: 0 13px;
@@ -64,6 +65,7 @@
     background: #fff;
     font-size: 14px;
     font-weight: 400;
+    resize: vertical;
 
     &:focus {
       border-color: #627fe0;
@@ -90,6 +92,15 @@
       background: #2446b8;
     }
   }
+}
+
+.success {
+  margin: 0;
+  padding: 11px 13px;
+  border-radius: 9px;
+  background: #effaf3;
+  color: #17663b;
+  font-size: 13px;
 }
 
 .helper {
