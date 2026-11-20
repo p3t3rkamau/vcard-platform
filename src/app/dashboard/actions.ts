@@ -182,7 +182,7 @@ export async function publishBusinessCard(formData: FormData) {
   const cardId = String(formData.get("cardId") ?? "");
   const card = await prisma.businessCard.findFirst({
     where: { id: cardId, ownerId: userId, deletedAt: null },
-    select: { id: true, displayName: true },
+    select: { id: true, slug: true, displayName: true },
   });
 
   if (!card || !card.displayName?.trim()) redirect("/dashboard?error=publish");
@@ -192,7 +192,7 @@ export async function publishBusinessCard(formData: FormData) {
   });
 
   revalidatePath("/dashboard");
-  revalidatePath(`/p/${cardId}`);
+  revalidatePath(`/p/${card.slug}`);
 }
 
 export async function unpublishBusinessCard(formData: FormData) {
