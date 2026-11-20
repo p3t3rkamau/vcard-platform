@@ -63,16 +63,18 @@ export default async function PublicCardPage({ params }: PageProps) {
 
   const name = card.displayName || [card.firstName, card.lastName].filter(Boolean).join(" ") || "Digital business card";
   const website = safeExternalUrl(card.website);
+  const profileImage = safeExternalUrl(card.profileImageUrl);
+  const coverImage = safeExternalUrl(card.coverImageUrl);
   const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
   return (
     <main className={styles.page}>
       <article className={styles.profile}>
-        <div className={styles.cover} style={card.coverImageUrl ? { backgroundImage: 'linear-gradient(120deg, rgba(18,31,70,.2), rgba(18,31,70,.65)), url("' + card.coverImageUrl + '")' } : undefined} />
+        <div className={styles.cover} style={coverImage ? { backgroundImage: 'linear-gradient(120deg, rgba(18,31,70,.2), rgba(18,31,70,.65)), url("' + coverImage + '")' } : undefined} />
         <div className={styles.identity}>
-          {card.profileImageUrl ? (
+          {profileImage ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className={styles.avatar} src={card.profileImageUrl} alt={name} />
+            <img className={styles.avatar} src={profileImage} alt={name} />
           ) : <div className={styles.avatarFallback}>{initials}</div>}
           <h1>{name}</h1>
           {(card.jobTitle || card.companyName) && (
