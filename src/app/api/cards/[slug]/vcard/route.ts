@@ -62,7 +62,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
     if (method.type === "PHONE" || method.type === "WHATSAPP") lines.push("TEL;TYPE=CELL,VOICE:" + value);
     else if (method.type === "EMAIL") lines.push("EMAIL;TYPE=INTERNET,WORK:" + value);
     else if (method.type === "WEBSITE") lines.push("URL:" + value);
-    else if (method.type === "ADDRESS") lines.push("ADR;TYPE=WORK:;" + ";" + value + ";;;;");
+    else if (method.type === "ADDRESS") lines.push("ADR;TYPE=WORK:;;" + value + ";;;;");
   }
 
   if (card.website) lines.push("URL:" + escapeVCardText(card.website));
@@ -70,7 +70,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
     const address = [card.address, card.city, card.region, card.country].map((part) => escapeVCardText(part || ""));
     lines.push("ADR;TYPE=WORK:;;" + address[0] + ";" + address[1] + ";" + address[2] + ";;" + address[3]);
   }
-  if (card.profileImageUrl) lines.push("PHOTO;VALUE=URI:" + card.profileImageUrl);
+  if (card.profileImageUrl) lines.push("PHOTO;VALUE=URI:" + escapeVCardText(card.profileImageUrl));
   if (card.bio) lines.push("NOTE:" + escapeVCardText(card.bio));
   lines.push("END:VCARD");
 
