@@ -6,7 +6,9 @@ import {
   archiveBusinessCard,
   deleteBusinessCard,
   duplicateBusinessCard,
+  publishBusinessCard,
   restoreBusinessCard,
+  unpublishBusinessCard,
 } from "./actions";
 import styles from "./dashboard.module.scss";
 
@@ -65,6 +67,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       {query.updated === "1" && <p className={styles.notice}>Your card details have been saved.</p>}
       {query.error === "invalid" && <p className={styles.notice}>Please check the details and try again.</p>}
+      {query.error === "publish" && <p className={styles.notice}>Add a display name before publishing your card.</p>}
 
       <section className={styles.stats} aria-label="Card statistics">
         <div className={styles.stat}><span>All active cards</span><strong>{activeCards.length}</strong></div>
@@ -107,6 +110,20 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
                 <div className={styles.cardFooter}>
                   <Link className={styles.actionLink} href={`/dashboard/cards/${card.id}/edit`}>Edit details</Link>
+                  {card.status === "PUBLISHED" ? (
+                    <>
+                      <Link className={styles.actionLink} href={`/p/${card.slug}`} target="_blank">View profile</Link>
+                      <form action={unpublishBusinessCard}>
+                        <input type="hidden" name="cardId" value={card.id} />
+                        <button className={styles.actionButton} type="submit">Unpublish</button>
+                      </form>
+                    </>
+                  ) : card.status !== "ARCHIVED" ? (
+                    <form action={publishBusinessCard}>
+                      <input type="hidden" name="cardId" value={card.id} />
+                      <button className={styles.actionButton} type="submit">Publish</button>
+                    </form>
+                  ) : null}
                   <form action={duplicateBusinessCard}>
                     <input type="hidden" name="cardId" value={card.id} />
                     <button className={styles.actionButton} type="submit">Duplicate</button>
