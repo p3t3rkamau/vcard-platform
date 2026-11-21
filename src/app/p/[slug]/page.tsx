@@ -23,7 +23,7 @@ async function getCard(slug: string) {
 function safeExternalUrl(value: string | null | undefined) {
   if (!value) return null;
   try {
-    const url = new URL(/^https?:\\/\\//i.test(value) ? value : "https://" + value);
+    const url = new URL(/^https?:\/\//i.test(value) ? value : "https://" + value);
     return ["http:", "https:"].includes(url.protocol) ? url.toString() : null;
   } catch {
     return null;
@@ -83,7 +83,7 @@ export default async function PublicCardPage({ params, searchParams }: PageProps
   const profileImage = safeExternalUrl(card.profileImageUrl);
   const coverImage = safeExternalUrl(card.coverImageUrl);
   const companyLogo = safeExternalUrl(card.companyLogoUrl);
-  const initials = name.split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const templateClass = (card.template?.slug || "modern-corporate").replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
   const templateSlug = card.template?.slug || "modern-corporate";
   const requestHeaders = await headers();
