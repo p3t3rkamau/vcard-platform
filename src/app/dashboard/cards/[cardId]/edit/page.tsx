@@ -7,10 +7,12 @@ import {
   addSocialLink,
   removeContactMethod,
   removeSocialLink,
-  updateBusinessCardDetails,\n  updateCardTemplate,
+  updateBusinessCardDetails,
+  updateCardTemplate,
 } from "../../../actions";
 import styles from "../../../dashboard.module.scss";
-import formStyles from "../../new/new-card.module.scss";\nimport { ensureDefaultTemplates } from "@/lib/templates";
+import formStyles from "../../new/new-card.module.scss";
+import { ensureDefaultTemplates } from "@/lib/templates";
 
 type EditCardPageProps = {
   params: Promise<{ cardId: string }>;
@@ -22,14 +24,17 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
   if (!session?.user?.id) redirect("/login");
 
   const [{ cardId }, query] = await Promise.all([params, searchParams]);
-  await ensureDefaultTemplates();\n  const card = await prisma.businessCard.findFirst({
+  await ensureDefaultTemplates();
+  const card = await prisma.businessCard.findFirst({
     where: { id: cardId, ownerId: session.user.id, deletedAt: null },
     include: {
       contactMethods: { orderBy: { sortOrder: "asc" } },
-      socialLinks: { orderBy: { sortOrder: "asc" } },\n      template: true,
+      socialLinks: { orderBy: { sortOrder: "asc" } },
+      template: true,
     },
   });
-  if (!card) notFound();\n  const templates = await prisma.template.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } });
+  if (!card) notFound();
+  const templates = await prisma.template.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } });
 
   return (
     <main className={styles.shell}>
@@ -46,7 +51,8 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
         {query.created === "1" && <p className={formStyles.success}>Your digital card has been created.</p>}
         {query.duplicated === "1" && <p className={formStyles.success}>A draft copy has been created.</p>}
         {query.contact === "added" && <p className={formStyles.success}>Contact method added.</p>}
-        {query.social === "added" && <p className={formStyles.success}>Social link added.</p>}\n        {query.template === "updated" && <p className={formStyles.success}>Your card design has been updated.</p>}
+        {query.social === "added" && <p className={formStyles.success}>Social link added.</p>}
+        {query.template === "updated" && <p className={formStyles.success}>Your card design has been updated.</p>}
         {query.error && <p className={formStyles.error}>Please check the information and try again.</p>}
 
         <div className={formStyles.section}>
