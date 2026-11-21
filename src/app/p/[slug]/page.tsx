@@ -190,7 +190,7 @@ export default async function PublicCardPage({ params, searchParams }: PageProps
         ) : templateSlug === "creative-portfolio" ? (
           <><div className={styles.creativeHeader}>{cover}<div className={styles.creativeIdentity}>{identity}</div><span className={styles.creativeOrb} /></div>{actions}{contactSection}{socialSection}</>
         ) : templateSlug === "elegant-business" ? (
-          <><div className={styles.elegantHeader}><span className={styles.elegantOverline}>PERSONAL PROFILE</span>{companyLogo && <span className={styles.elegantLogo}>{identity}</span>}{!companyLogo && identity}<span className={styles.elegantRule} /></div>{actions}{contactSection}{socialSection}</>
+          <><div className={styles.elegantHeader}><span className={styles.elegantOverline}>PERSONAL PROFILE</span>{identity}<span className={styles.elegantRule} /></div>{actions}{contactSection}{socialSection}</>
         ) : templateSlug === "gradient-modern" ? (
           <><div className={styles.gradientHeader}>{cover}{identity}</div>{actions}{contactSection}{socialSection}</>
         ) : templateSlug === "personal-branding" ? (
