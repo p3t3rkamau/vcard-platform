@@ -175,3 +175,8 @@
   object-fit: contain;
 }
 .personalBranding .companyLogo { margin-left: 0; }
+
+
+.reportDetails { padding: 15px 22px; border-top: 1px solid #eef0f5; color: #667085; font-size: 12px; summary { cursor: pointer; font-weight: 700; } form { display: grid; gap: 10px; margin-top: 13px; } label { display: grid; gap: 5px; color: #475467; } input:not([type="text"]), select, textarea { width: 100%; padding: 9px; border: 1px solid #d8deea; border-radius: 7px; background: #fff; color: #344054; font: inherit; } button { min-height: 36px; border: 0; border-radius: 7px; background: #344054; color: #fff; font-size: 12px; cursor: pointer; } }
+.reportTrap { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; }
+.reportSuccess { margin: 0; padding: 12px 22px; border-top: 1px solid #eef0f5; color: #17663b; font-size: 12px; }
