@@ -228,7 +228,7 @@ export default function QRStudio({
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
-      URL.revokeObjectURL(downloadUrl);
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
     } catch {
       setMessage("The QR download failed. Please try again or remove the frame and retry.");
     }
