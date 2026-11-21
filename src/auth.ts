@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { compare } from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const credentialsSchema = z.object({
   email: z.string().trim().email().max(254),
@@ -19,11 +20,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
         const email = parsed.data.email.toLowerCase();
+        if (!(await checkRateLimit(request, "login", 10, 15 * 60 * 1000, email))) return null;
         const user = await prisma.user.findUnique({ where: { email } });
 
         const developmentVerificationBypass = process.env.NODE_ENV !== "production" && process.env.ALLOW_UNVERIFIED_LOGIN === "true";
