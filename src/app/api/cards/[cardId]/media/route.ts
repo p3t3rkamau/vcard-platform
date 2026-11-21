@@ -46,9 +46,6 @@ export async function POST(request: Request, { params }: RouteProps) {
     return backToEditor(request, cardId, "rate-limited");
   }
 
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    return backToEditor(request, cardId, "not-configured");
-  }
 
   let formData: FormData;
   try {
@@ -83,7 +80,6 @@ export async function POST(request: Request, { params }: RouteProps) {
       access: "public",
       addRandomSuffix: true,
       contentType: file.type,
-      token: process.env.BLOB_READ_WRITE_TOKEN,
     });
     uploadedUrl = blob.url;
     failureStage = "database";
@@ -116,9 +112,7 @@ export async function POST(request: Request, { params }: RouteProps) {
     });
 
     if (oldMedia.length) {
-      await del(oldMedia.map((item) => item.publicUrl), {
-        token: process.env.BLOB_READ_WRITE_TOKEN,
-      }).catch(() => undefined);
+      await del(oldMedia.map((item) => item.publicUrl)).catch(() => undefined);
     }
 
     return backToEditor(request, cardId, "uploaded", mediaType);
