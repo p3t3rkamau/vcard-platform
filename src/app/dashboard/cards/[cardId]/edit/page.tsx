@@ -41,7 +41,7 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
   const protocol = (requestHeaders.get("x-forwarded-proto") || "https").split(",")[0].trim();
-  const appBaseUrl = (process.env.NEXT_PUBLIC_APP_URL || (host ? protocol + "://" + host : "http://localhost:3000")).replace(/\\/$/, "");
+  const appBaseUrl = (process.env.NEXT_PUBLIC_APP_URL || (host ? protocol + "://" + host : "http://localhost:3000")).replace(/\/$/, "");
 
   return (
     <main className={styles.shell}>
