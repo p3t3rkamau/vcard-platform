@@ -43,6 +43,8 @@ export async function GET(_request: Request, { params }: RouteProps) {
   });
   if (!card) return Response.json({ error: "Profile not found" }, { status: 404 });
 
+  await prisma.analyticsEvent.create({ data: { businessCardId: card.id, eventType: "CONTACT_SAVE" } }).catch(() => undefined);
+
   const nameParts = (card.displayName || "").trim().split(/\s+/).filter(Boolean);
   const firstName = card.firstName || nameParts[0] || "";
   const lastName = card.lastName || nameParts.slice(1).join(" ") || "";
