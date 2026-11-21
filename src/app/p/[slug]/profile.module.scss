@@ -180,3 +180,174 @@
 .reportDetails { padding: 15px 22px; border-top: 1px solid #eef0f5; color: #667085; font-size: 12px; summary { cursor: pointer; font-weight: 700; } form { display: grid; gap: 10px; margin-top: 13px; } label { display: grid; gap: 5px; color: #475467; } input:not([type="text"]), select, textarea { width: 100%; padding: 9px; border: 1px solid #d8deea; border-radius: 7px; background: #fff; color: #344054; font: inherit; } button { min-height: 36px; border: 0; border-radius: 7px; background: #344054; color: #fff; font-size: 12px; cursor: pointer; } }
 .reportTrap { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; }
 .reportSuccess { margin: 0; padding: 12px 22px; border-top: 1px solid #eef0f5; color: #17663b; font-size: 12px; }
+
+
+/* Distinct structural treatments for the eight profile designs */
+.minimalHeader {
+  padding: 38px 28px 10px;
+  background: #fff;
+  .minimalRule { display: block; width: 38px; height: 3px; margin-bottom: 25px; background: #182230; }
+  .identity { padding: 0; text-align: left; }
+  .avatar, .avatarFallback { width: 86px; height: 86px; margin: 0 0 20px; border: 0; border-radius: 14px; }
+  .avatarFallback { background: #eef1f5; color: #182230; }
+  .companyLogo { margin: 0 0 12px; }
+  .identity h1 { font-size: 30px; }
+  .bio { margin-left: 0; }
+}
+.executiveHeader {
+  position: relative;
+  background: #111827;
+  .cover { height: 175px; background: linear-gradient(120deg, #080d18, #263247 65%, #64748b); }
+}
+.executiveIdentity {
+  position: relative;
+  z-index: 1;
+  margin-top: -54px;
+  .identity { padding: 0 30px; text-align: left; }
+  .avatar, .avatarFallback { margin: 0 0 17px; border: 4px solid #111827; }
+  .companyLogo { margin: 0 0 12px; }
+  .identity h1 { font-size: 30px; }
+  .bio { margin-left: 0; }
+}
+.creativeHeader {
+  position: relative;
+  overflow: hidden;
+  padding-bottom: 5px;
+  background: #fff9f5;
+  .cover { height: 225px; background: linear-gradient(125deg, #ff6b6b, #845ec2 55%, #00c9a7); }
+}
+.creativeIdentity {
+  position: relative;
+  z-index: 1;
+  margin-top: -76px;
+  .identity { padding: 0 30px; text-align: left; }
+  .avatar, .avatarFallback { width: 104px; height: 104px; margin: 0 0 17px; border: 5px solid #fff9f5; border-radius: 28px; }
+  .identity h1 { font-size: 32px; }
+  .bio { margin-left: 0; }
+  .companyLogo { margin-left: 0; }
+}
+.creativeOrb {
+  position: absolute;
+  top: 145px;
+  right: -38px;
+  width: 125px;
+  height: 125px;
+  border: 20px solid rgba(255,255,255,.22);
+  border-radius: 50%;
+}
+.elegantHeader {
+  padding: 38px 28px 28px;
+  background: #f8f4ed;
+  text-align: center;
+  .elegantOverline { display: block; margin-bottom: 25px; color: #927c60; font-size: 9px; font-weight: 800; letter-spacing: .24em; }
+  .identity { padding: 0; }
+  .avatar, .avatarFallback { width: 100px; height: 100px; margin: 0 auto 18px; border: 3px solid #fff; border-radius: 50%; }
+  .companyLogo { margin: 0 auto 16px; }
+  .identity h1 { font-family: Georgia, serif; font-size: 31px; font-weight: 500; letter-spacing: -.02em; }
+  .role { color: #786b5b; }
+  .bio { max-width: 340px; color: #766d61; }
+  .elegantRule { display: block; width: 52px; height: 1px; margin: 25px auto 0; background: #b59a76; }
+}
+.gradientHeader {
+  position: relative;
+  padding-bottom: 28px;
+  background: linear-gradient(145deg, #312e81, #7e22ce 62%, #db2777);
+  .cover { height: 190px; background: linear-gradient(135deg, rgba(49,46,129,.2), rgba(219,39,119,.18)); }
+  .identity { position: relative; z-index: 1; margin-top: -88px; }
+  .avatar, .avatarFallback { border-color: rgba(255,255,255,.95); }
+  .avatarFallback { background: #fff; color: #6d28d9; }
+  .identity h1 { color: #fff; }
+  .role, .bio { color: rgba(255,255,255,.82); }
+  .companyLogo { padding: 5px; border-radius: 8px; background: rgba(255,255,255,.9); }
+}
+.personalHeader {
+  display: grid;
+  grid-template-columns: 36% 64%;
+  min-height: 270px;
+  background: #ecfdf5;
+  .cover { height: 100%; min-height: 270px; background: linear-gradient(145deg, #0f766e, #164e63 60%, #1e293b); }
+}
+.personalIdentity {
+  display: flex;
+  align-items: center;
+  padding: 24px 20px;
+  .identity { width: 100%; padding: 0; text-align: left; }
+  .avatar, .avatarFallback { width: 82px; height: 82px; margin: 0 0 18px; border: 3px solid #fff; border-radius: 22px; }
+  .identity h1 { font-size: 27px; }
+  .role { color: #0f766e; }
+  .bio { margin-left: 0; }
+  .companyLogo { margin-left: 0; }
+}
+.luxuryHeader {
+  padding: 36px 28px 30px;
+  background: linear-gradient(180deg, #111827, #202b3c);
+  color: #f8f5ed;
+  text-align: center;
+  .luxuryMonogram { display: grid; width: 54px; height: 54px; place-items: center; margin: 0 auto 22px; border: 1px solid #b59a66; border-radius: 50%; color: #d8c39a; font-family: Georgia, serif; font-size: 17px; letter-spacing: .08em; }
+  .identity { padding: 0; }
+  .avatar, .avatarFallback { width: 94px; height: 94px; margin: 0 auto 17px; border: 2px solid #b59a66; border-radius: 50%; }
+  .avatarFallback { background: #2d394b; color: #e0c99a; }
+  .companyLogo { margin: 0 auto 13px; }
+  .identity h1 { color: #f8f5ed; font-family: Georgia, serif; font-size: 29px; font-weight: 500; }
+  .role, .bio { color: #c7c0b2; }
+  .luxuryRule { display: block; width: 64px; height: 1px; margin: 26px auto 0; background: #b59a66; }
+}
+.contactItem {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  .contactIcon {
+    display: grid;
+    flex: 0 0 38px;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 12px;
+    background: #f0f3fb;
+    color: #3157d5;
+    font-size: 17px;
+    font-weight: 700;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .contactText { display: grid; min-width: 0; gap: 4px; }
+  .contactText > span { color: #98a2b3; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+  .contactText a, .contactText p { overflow-wrap: anywhere; margin: 0; color: #243b83; font-size: 14px; text-decoration: none; }
+  .contactText p { color: #475467; }
+}
+.sectionMark { margin-right: 8px; color: #8b95a7; }
+.socials {
+  a { gap: 9px; min-height: 42px; padding: 4px 12px 4px 5px; }
+  .socialIcon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; background: #eef2ff; color: #3157d5; font-size: 11px; font-weight: 850; }
+}
+.executiveDark {
+  .contactItem .contactIcon { background: #263247; color: #d6bd88; }
+  .contactItem .contactText a { color: #c4b5fd; }
+  .socials .socialIcon { background: #263247; color: #e2c58b; }
+}
+.creativePortfolio {
+  .contactItem .contactIcon { background: #fce7f3; color: #9d174d; }
+  .socials .socialIcon { background: #f3e8ff; color: #7e22ce; }
+}
+.elegantBusiness {
+  .contactItem .contactIcon { background: #eee6d9; color: #786044; }
+  .socials .socialIcon { background: #eee6d9; color: #786044; }
+}
+.gradientModern {
+  .contactItem .contactIcon { background: #f3e8ff; color: #7e22ce; }
+  .socials .socialIcon { background: #fce7f3; color: #be185d; }
+}
+.personalBranding {
+  .contactItem .contactIcon { background: #ccfbf1; color: #0f766e; }
+  .socials .socialIcon { background: #ccfbf1; color: #0f766e; }
+}
+.luxuryCorporate {
+  .contactItem .contactIcon { background: #f5f0e6; color: #8a7042; }
+  .socials .socialIcon { background: #f5f0e6; color: #8a7042; }
+}
+@media (max-width: 520px) {
+  .personalHeader { grid-template-columns: 1fr; }
+  .personalHeader .cover { min-height: 130px; height: 130px; }
+  .personalIdentity { padding: 0 22px 24px; }
+  .personalIdentity .identity { margin-top: -48px; }
+}
