@@ -81,7 +81,7 @@ export default async function PublicCardPage({ params }: PageProps) {
             // eslint-disable-next-line @next/next/no-img-element
             <img className={styles.avatar} src={profileImage} alt={name} />
           ) : <div className={styles.avatarFallback}>{initials}</div>}
-          {companyLogo && <img className={styles.companyLogo} src={companyLogo} alt={card.companyName ? card.companyName + " logo" : "Company logo"} />}
+          {companyLogo && <>{/* eslint-disable-next-line @next/next/no-img-element */}<img className={styles.companyLogo} src={companyLogo} alt={card.companyName ? card.companyName + " logo" : "Company logo"} />}
           <h1>{name}</h1>
           {(card.jobTitle || card.companyName) && (
             <p className={styles.role}>{[card.jobTitle, card.companyName].filter(Boolean).join(" · ")}</p>
@@ -91,7 +91,7 @@ export default async function PublicCardPage({ params }: PageProps) {
 
         <div className={styles.actions}>
           <a className={styles.saveButton} href={"/api/cards/" + card.slug + "/vcard"}>＋ Add to contacts</a>
-          {website && <a className={styles.secondaryButton} href={website} target="_blank" rel="noreferrer">Visit website</a>}
+          {website && <a className={styles.secondaryButton} href={"/api/cards/" + card.slug + "/links/website"} target="_blank" rel="noreferrer">Visit website</a>}
         </div>
 
         {(card.contactMethods.length > 0 || card.website || card.address) && (
