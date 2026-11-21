@@ -68,7 +68,7 @@ export default function QRStudio({
       width: 320,
       height: 320,
       type: "svg" as const,
-      data: profileUrl,
+      data: profileUrl + "?source=qr",
       margin: 12,
       qrOptions: { errorCorrectionLevel },
       image: logoUrl || undefined,
