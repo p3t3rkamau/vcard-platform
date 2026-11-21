@@ -38,7 +38,10 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
     },
   });
   if (!card) notFound();
-  const [templates, memberships] = await Promise.all([\n    prisma.template.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),\n    prisma.organizationMember.findMany({ where: { userId: session.user.id, role: { not: "VIEWER" } }, include: { organization: { select: { id: true, name: true } } }, orderBy: { joinedAt: "asc" } }),\n  ]);
+  const [templates, memberships] = await Promise.all([
+    prisma.template.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),
+    prisma.organizationMember.findMany({ where: { userId: session.user.id, role: { not: "VIEWER" } }, include: { organization: { select: { id: true, name: true } } }, orderBy: { joinedAt: "asc" } }),
+  ]);
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
   const protocol = (requestHeaders.get("x-forwarded-proto") || "https").split(",")[0].trim();
@@ -131,7 +134,7 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
         <QRStudio
           cardId={card.id}
           slug={card.slug}
-          profileUrl={(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "") + "/p/" + card.slug}
+          profileUrl={appBaseUrl + "/p/" + card.slug}
           profileImageUrl={card.profileImageUrl}
           companyLogoUrl={card.companyLogoUrl}
           initialDesign={{
