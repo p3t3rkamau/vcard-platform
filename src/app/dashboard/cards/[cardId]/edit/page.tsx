@@ -13,6 +13,7 @@ import {
 import styles from "../../../dashboard.module.scss";
 import formStyles from "../../new/new-card.module.scss";
 import { ensureDefaultTemplates } from "@/lib/templates";
+import QRStudio from "@/components/qr/QRStudio";
 
 type EditCardPageProps = {
   params: Promise<{ cardId: string }>;
@@ -31,6 +32,7 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
       contactMethods: { orderBy: { sortOrder: "asc" } },
       socialLinks: { orderBy: { sortOrder: "asc" } },
       template: true,
+      qrDesign: true,
     },
   });
   if (!card) notFound();
@@ -102,6 +104,25 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
             ))}
           </div>
         </div>
+
+        <QRStudio
+          cardId={card.id}
+          slug={card.slug}
+          profileUrl={(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "") + "/p/" + card.slug}
+          profileImageUrl={card.profileImageUrl}
+          companyLogoUrl={card.companyLogoUrl}
+          initialDesign={{
+            foregroundColor: card.qrDesign?.foregroundColor || "#111827",
+            backgroundColor: card.qrDesign?.backgroundColor || "#FFFFFF",
+            dotsType: card.qrDesign?.dotsType || "rounded",
+            cornersSquareType: card.qrDesign?.cornersSquareType || "extra-rounded",
+            cornersDotType: card.qrDesign?.cornersDotType || "dot",
+            errorCorrectionLevel: card.qrDesign?.errorCorrectionLevel || "H",
+            frameStyle: card.qrDesign?.frameStyle || "none",
+            frameText: card.qrDesign?.frameText || "SCAN TO CONNECT",
+            logoUrl: card.qrDesign?.logoUrl || null,
+          }}
+        />
 
         <form action={updateBusinessCardDetails} className={formStyles.form}>
           <input type="hidden" name="cardId" value={card.id} />
