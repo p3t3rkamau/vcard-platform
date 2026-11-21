@@ -79,11 +79,14 @@ export async function addOrganizationMember(formData: FormData) {
   });
   if (!memberUser) redirect("/dashboard/organizations/" + parsed.data.organizationId + "?error=user-not-found");
   if (memberUser.id === userId) redirect("/dashboard/organizations/" + parsed.data.organizationId + "?error=already-member");
-
-  await prisma.organizationMember.upsert({
+  const existingMembership = await prisma.organizationMember.findUnique({
     where: { organizationId_userId: { organizationId: parsed.data.organizationId, userId: memberUser.id } },
-    update: { role: parsed.data.role },
-    create: { organizationId: parsed.data.organizationId, userId: memberUser.id, role: parsed.data.role },
+    select: { role: true },
+  });
+  if (existingMembership) redirect("/dashboard/organizations/" + parsed.data.organizationId + "?error=already-member");
+
+  await prisma.organizationMember.create({
+    data: { organizationId: parsed.data.organizationId, userId: memberUser.id, role: parsed.data.role },
   });
 
   revalidatePath("/dashboard/organizations/" + parsed.data.organizationId);
