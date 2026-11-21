@@ -68,6 +68,7 @@ export default async function PublicCardPage({ params }: PageProps) {
   const website = safeExternalUrl(card.website);
   const profileImage = safeExternalUrl(card.profileImageUrl);
   const coverImage = safeExternalUrl(card.coverImageUrl);
+  const companyLogo = safeExternalUrl(card.companyLogoUrl);
   const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const templateClass = (card.template?.slug || "modern-corporate").replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
 
@@ -80,7 +81,7 @@ export default async function PublicCardPage({ params }: PageProps) {
             // eslint-disable-next-line @next/next/no-img-element
             <img className={styles.avatar} src={profileImage} alt={name} />
           ) : <div className={styles.avatarFallback}>{initials}</div>}
-          <h1>{name}</h1>
+          {companyLogo && <img className={styles.companyLogo} src={companyLogo} alt={card.companyName ? card.companyName + " logo" : "Company logo"} />}\n          <h1>{name}</h1>
           {(card.jobTitle || card.companyName) && (
             <p className={styles.role}>{[card.jobTitle, card.companyName].filter(Boolean).join(" · ")}</p>
           )}
