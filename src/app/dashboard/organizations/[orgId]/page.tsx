@@ -97,7 +97,7 @@ export default async function OrganizationDetailPage({ params, searchParams }: P
                 </form>
               </div>
             )}
-            {!isOwner && canManage && member.role === "VIEWER" && member.user.id !== session.user.id && (
+            {!isOwner && canManage && ["EDITOR", "VIEWER"].includes(member.role) && member.user.id !== session.user.id && (
               <form action={removeOrganizationMember} className={orgStyles.memberActions}>
                 <input type="hidden" name="organizationId" value={organization.id} />
                 <input type="hidden" name="memberId" value={member.id} />
