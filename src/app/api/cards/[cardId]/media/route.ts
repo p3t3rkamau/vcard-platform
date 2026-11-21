@@ -125,7 +125,7 @@ export async function POST(request: Request, { params }: RouteProps) {
   } catch (error) {
     console.error("[card-media-upload] Failed during " + failureStage, error);
     if (uploadedUrl) {
-      await del(uploadedUrl, { token: process.env.BLOB_READ_WRITE_TOKEN }).catch(() => undefined);
+      await del(uploadedUrl).catch(() => undefined);
     }
     const editorUrl = new URL("/dashboard/cards/" + cardId + "/edit", request.url);
     editorUrl.searchParams.set("media", "failed");
