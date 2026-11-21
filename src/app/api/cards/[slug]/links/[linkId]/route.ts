@@ -1,4 +1,3 @@
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -18,6 +17,14 @@ export async function GET(request: Request, { params }: RouteProps) {
     select: { id: true },
   });
   if (!card) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+
+  if (linkId === "website") {
+    const cardWebsite = await prisma.businessCard.findFirst({ where: { id: card.id }, select: { website: true } });
+    const destination = cardWebsite?.website ? safeUrl(cardWebsite.website) : null;
+    if (!destination) return NextResponse.json({ error: "Link not found" }, { status: 404 });
+    await prisma.analyticsEvent.create({ data: { businessCardId: card.id, eventType: "WEBSITE_CLICK" } }).catch(() => undefined);
+    return NextResponse.redirect(destination, 302);
+  }
 
   const [contact, social] = await Promise.all([
     prisma.contactMethod.findFirst({ where: { id: linkId, businessCardId: card.id, isVisible: true, type: "WEBSITE" }, select: { value: true } }),
