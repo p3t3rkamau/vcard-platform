@@ -45,6 +45,13 @@ enum AnalyticsEventType {
   SOCIAL_CLICK
 }
 
+enum ReportStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
+  ACTIONED
+}
+
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -63,6 +70,8 @@ model User {
   media                  Media[]
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
+  submittedReports        ProfileReport[] @relation("ReportReporter")
+  reviewedReports         ProfileReport[] @relation("ReportReviewer")
 
   @@map("users")
 }
@@ -203,6 +212,7 @@ model BusinessCard {
   media          Media[]
   analytics      AnalyticsEvent[]
   slugRedirects  SlugRedirect[]
+  reports        ProfileReport[]
 
   @@index([ownerId, status])
   @@index([organizationId, status])
@@ -346,4 +356,26 @@ model PasswordResetToken {
   @@index([userId])
   @@index([expiresAt])
   @@map("password_reset_tokens")
+}
+
+
+model ProfileReport {
+  id             String       @id @default(cuid())
+  businessCardId String
+  reporterUserId String?
+  reviewedById   String?
+  reason         String
+  details        String?      @db.Text
+  status         ReportStatus @default(OPEN)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  businessCard BusinessCard @relation(fields: [businessCardId], references: [id], onDelete: Cascade)
+  reporter     User?        @relation("ReportReporter", fields: [reporterUserId], references: [id], onDelete: SetNull)
+  reviewedBy   User?        @relation("ReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([businessCardId])
+  @@index([reporterUserId])
+  @@map("profile_reports")
 }
