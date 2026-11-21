@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { hashOneTimeToken } from "@/lib/auth/tokens";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,10 @@ export async function POST(request: Request) {
       { error: "Password must be 12–72 characters and no more than 72 bytes." },
       { status: 400 },
     );
+  }
+
+  if (!(await checkRateLimit(request, "reset-password", 10, 15 * 60 * 1000))) {
+    return NextResponse.json({ error: "Too many attempts. Please try again later." }, { status: 429 });
   }
 
   const tokenHash = hashOneTimeToken(parsed.data.token);
