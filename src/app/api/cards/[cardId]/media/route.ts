@@ -2,6 +2,7 @@ import { del, put } from "@vercel/blob";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 type RouteProps = { params: Promise<{ cardId: string }> };
 
@@ -39,6 +40,9 @@ export async function POST(request: Request, { params }: RouteProps) {
     select: { id: true },
   });
   if (!card) return NextResponse.json({ error: "Card not found." }, { status: 404 });
+  if (!(await checkRateLimit(request, "card-media-upload", 12, 60 * 60 * 1000, session.user.id))) {
+    return backToEditor(request, cardId, "rate-limited");
+  }
 
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     return backToEditor(request, cardId, "not-configured");
@@ -61,12 +65,18 @@ export async function POST(request: Request, { params }: RouteProps) {
     return backToEditor(request, cardId, "invalid-file", mediaType);
   }
 
+  const fileBytes = Buffer.from(await file.arrayBuffer());
+  const isJpeg = file.type === "image/jpeg" && fileBytes[0] === 0xff && fileBytes[1] === 0xd8 && fileBytes[2] === 0xff;
+  const isPng = file.type === "image/png" && fileBytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  const isWebp = file.type === "image/webp" && fileBytes.toString("ascii", 0, 4) === "RIFF" && fileBytes.toString("ascii", 8, 12) === "WEBP";
+  if (!isJpeg && !isPng && !isWebp) return backToEditor(request, cardId, "invalid-file", mediaType);
+
   const extension = ALLOWED_TYPES[file.type as keyof typeof ALLOWED_TYPES];
   const pathname = "vcard/" + session.user.id + "/" + card.id + "/" + mediaType.toLowerCase() + "." + extension;
   let uploadedUrl: string | null = null;
 
   try {
-    const blob = await put(pathname, file, {
+    const blob = await put(pathname, fileBytes, {
       access: "public",
       addRandomSuffix: true,
       contentType: file.type,
