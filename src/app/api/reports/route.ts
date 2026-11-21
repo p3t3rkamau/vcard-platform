@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const reportSchema = z.object({
   cardId: z.string().min(1),
@@ -21,6 +22,10 @@ export async function POST(request: Request) {
     website: formData.get("website") ?? "",
   });
   if (!parsed.success || parsed.data.website) return NextResponse.json({ error: "Invalid report" }, { status: 400 });
+
+  if (!(await checkRateLimit(request, "profile-report", 3, 60 * 60 * 1000, parsed.data.cardId))) {
+    return NextResponse.json({ error: "Too many reports. Please try again later." }, { status: 429 });
+  }
 
   const card = await prisma.businessCard.findFirst({
     where: { id: parsed.data.cardId, status: "PUBLISHED", deletedAt: null },
