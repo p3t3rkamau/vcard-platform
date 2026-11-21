@@ -76,6 +76,7 @@ export async function POST(request: Request, { params }: RouteProps) {
   const extension = ALLOWED_TYPES[file.type as keyof typeof ALLOWED_TYPES];
   const pathname = "vcard/" + session.user.id + "/" + card.id + "/" + mediaType.toLowerCase() + "." + extension;
   let uploadedUrl: string | null = null;
+  let failureStage: "blob" | "database" = "blob";
 
   try {
     const blob = await put(pathname, fileBytes, {
@@ -85,6 +86,7 @@ export async function POST(request: Request, { params }: RouteProps) {
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });
     uploadedUrl = blob.url;
+    failureStage = "database";
 
     const oldMedia = await prisma.media.findMany({
       where: { businessCardId: card.id, type: mediaType },
@@ -120,10 +122,15 @@ export async function POST(request: Request, { params }: RouteProps) {
     }
 
     return backToEditor(request, cardId, "uploaded", mediaType);
-  } catch {
+  } catch (error) {
+    console.error("[card-media-upload] Failed during " + failureStage, error);
     if (uploadedUrl) {
       await del(uploadedUrl, { token: process.env.BLOB_READ_WRITE_TOKEN }).catch(() => undefined);
     }
-    return backToEditor(request, cardId, "failed", mediaType);
+    const editorUrl = new URL("/dashboard/cards/" + cardId + "/edit", request.url);
+    editorUrl.searchParams.set("media", "failed");
+    editorUrl.searchParams.set("mediaType", mediaType);
+    editorUrl.searchParams.set("reason", failureStage);
+    return NextResponse.redirect(editorUrl, 303);
   }
 }
