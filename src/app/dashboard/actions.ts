@@ -357,3 +357,33 @@ export async function removeSocialLink(formData: FormData) {
   await prisma.socialLink.deleteMany({ where: { id: socialId, businessCardId: card.id } });
   revalidatePath("/dashboard/cards/" + card.id + "/edit");
 }
+
+
+export async function updateCardTemplate(formData: FormData) {
+  const userId = await requireUserId();
+  const cardId = String(formData.get("cardId") ?? "");
+  const templateSlug = String(formData.get("templateSlug") ?? "");
+  const allowedSlugs = [
+    "modern-corporate", "minimal-professional", "executive-dark", "creative-portfolio",
+    "elegant-business", "gradient-modern", "personal-branding", "luxury-corporate",
+  ];
+  if (!allowedSlugs.includes(templateSlug)) redirect("/dashboard");
+
+  const card = await requireOwnedCard(cardId, userId);
+  if (!card) redirect("/dashboard");
+
+  const template = await prisma.template.findUnique({
+    where: { slug: templateSlug },
+    select: { id: true },
+  });
+  if (!template) redirect("/dashboard/cards/" + card.id + "/edit?error=template");
+
+  await prisma.businessCard.update({
+    where: { id: card.id },
+    data: { templateId: template.id },
+  });
+
+  revalidatePath("/dashboard/cards/" + card.id + "/edit");
+  revalidatePath("/p");
+  redirect("/dashboard/cards/" + card.id + "/edit?template=updated");
+}
