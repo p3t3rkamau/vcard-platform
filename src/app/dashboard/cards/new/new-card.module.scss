@@ -234,3 +234,37 @@
 .personal-branding { background: linear-gradient(120deg, #0f766e, #164e63, #1e293b); }
 .luxury-corporate { background: linear-gradient(120deg, #101827, #b59a66); }
 @media (max-width: 520px) { .templateGrid { grid-template-columns: 1fr; } }
+
+
+.mediaGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.mediaCard {
+  display: grid;
+  min-width: 0;
+  align-content: start;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #e8ebf2;
+  border-radius: 12px;
+  background: #fafbfe;
+  > strong { color: #344054; font-size: 12px; }
+  > img { width: 100%; height: 110px; border-radius: 8px; background: #eef1f7; object-fit: cover; }
+  form { display: grid; gap: 9px; }
+  input[type="file"] { width: 100%; min-width: 0; color: #667085; font-size: 10px; }
+  button { min-height: 37px; border: 0; border-radius: 8px; background: #eef2ff; color: #2948ad; font-size: 11px; font-weight: 750; cursor: pointer; }
+}
+.mediaPlaceholder {
+  display: grid;
+  height: 110px;
+  place-items: center;
+  border-radius: 8px;
+  background: #eef1f7;
+  color: #98a2b3;
+  font-size: 11px;
+  text-align: center;
+}
+@media (max-width: 680px) { .mediaGrid { grid-template-columns: 1fr; } .mediaCard { grid-template-columns: 1fr; } }
