@@ -26,7 +26,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email = parsed.data.email.toLowerCase();
         const user = await prisma.user.findUnique({ where: { email } });
 
-        if (!user?.passwordHash || !user.emailVerified) return null;
+        const developmentVerificationBypass = process.env.NODE_ENV !== "production" && process.env.ALLOW_UNVERIFIED_LOGIN === "true";
+        if (!user?.passwordHash || (!user.emailVerified && !developmentVerificationBypass)) return null;
 
         const passwordIsValid = await compare(parsed.data.password, user.passwordHash);
         if (!passwordIsValid) return null;
