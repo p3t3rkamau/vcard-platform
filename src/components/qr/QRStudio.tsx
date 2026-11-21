@@ -25,8 +25,13 @@ type Props = {
   companyLogoUrl: string | null;
 };
 
-const DOT_STYLES = ["square", "dots", "rounded", "classy", "classy-rounded", "extra-rounded"];
-const CORNER_STYLES = ["square", "dot", "extra-rounded"];
+const DOT_STYLES = ["square", "dots", "rounded", "classy", "classy-rounded", "extra-rounded"] as const;
+const CORNER_STYLES = ["square", "dot", "extra-rounded"] as const;
+type DotStyle = (typeof DOT_STYLES)[number];
+type CornerStyle = (typeof CORNER_STYLES)[number];
+type CorrectionLevel = "L" | "M" | "Q" | "H";
+type FrameStyle = "none" | "label" | "border";
+type LogoChoice = "none" | "profile" | "company";
 
 export default function QRStudio({
   cardId,
@@ -40,13 +45,13 @@ export default function QRStudio({
   const qrRef = useRef<QRCodeStyling | null>(null);
   const [foregroundColor, setForegroundColor] = useState(initialDesign.foregroundColor);
   const [backgroundColor, setBackgroundColor] = useState(initialDesign.backgroundColor);
-  const [dotsType, setDotsType] = useState(initialDesign.dotsType);
-  const [cornersSquareType, setCornersSquareType] = useState(initialDesign.cornersSquareType);
-  const [cornersDotType, setCornersDotType] = useState(initialDesign.cornersDotType);
-  const [errorCorrectionLevel, setErrorCorrectionLevel] = useState(initialDesign.errorCorrectionLevel);
-  const [frameStyle, setFrameStyle] = useState(initialDesign.frameStyle || "none");
+  const [dotsType, setDotsType] = useState<DotStyle>(initialDesign.dotsType as DotStyle);
+  const [cornersSquareType, setCornersSquareType] = useState<CornerStyle>(initialDesign.cornersSquareType as CornerStyle);
+  const [cornersDotType, setCornersDotType] = useState<"square" | "dot">(initialDesign.cornersDotType as "square" | "dot");
+  const [errorCorrectionLevel, setErrorCorrectionLevel] = useState<CorrectionLevel>(initialDesign.errorCorrectionLevel as CorrectionLevel);
+  const [frameStyle, setFrameStyle] = useState<FrameStyle>((initialDesign.frameStyle || "none") as FrameStyle);
   const [frameText, setFrameText] = useState(initialDesign.frameText || "SCAN TO CONNECT");
-  const [logoChoice, setLogoChoice] = useState(
+  const [logoChoice, setLogoChoice] = useState<LogoChoice>(
     initialDesign.logoUrl && initialDesign.logoUrl === companyLogoUrl
       ? "company"
       : initialDesign.logoUrl && initialDesign.logoUrl === profileImageUrl ? "profile" : "none",
@@ -137,22 +142,22 @@ export default function QRStudio({
           <div className={styles.controlGroup}>
             <h3>Pattern</h3>
             <label>Dot style
-              <select value={dotsType} onChange={(event) => setDotsType(event.target.value)}>
+              <select value={dotsType} onChange={(event) => setDotsType(event.target.value as DotStyle)}>
                 {DOT_STYLES.map((value) => <option key={value} value={value}>{value.replaceAll("-", " ")}</option>)}
               </select>
             </label>
             <label>Corner frame
-              <select value={cornersSquareType} onChange={(event) => setCornersSquareType(event.target.value)}>
+              <select value={cornersSquareType} onChange={(event) => setCornersSquareType(event.target.value as CornerStyle)}>
                 {CORNER_STYLES.map((value) => <option key={value} value={value}>{value}</option>)}
               </select>
             </label>
             <label>Corner dot
-              <select value={cornersDotType} onChange={(event) => setCornersDotType(event.target.value)}>
+              <select value={cornersDotType} onChange={(event) => setCornersDotType(event.target.value as "square" | "dot")}>
                 {["square", "dot"].map((value) => <option key={value} value={value}>{value}</option>)}
               </select>
             </label>
             <label>Error correction
-              <select value={errorCorrectionLevel} onChange={(event) => setErrorCorrectionLevel(event.target.value)}>
+              <select value={errorCorrectionLevel} onChange={(event) => setErrorCorrectionLevel(event.target.value as CorrectionLevel)}>
                 <option value="L">Low</option><option value="M">Medium</option><option value="Q">Quartile</option><option value="H">High (recommended with logo)</option>
               </select>
             </label>
@@ -160,7 +165,7 @@ export default function QRStudio({
           <div className={styles.controlGroup}>
             <h3>Center logo</h3>
             <label>Logo image
-              <select value={logoChoice} onChange={(event) => setLogoChoice(event.target.value)}>
+              <select value={logoChoice} onChange={(event) => setLogoChoice(event.target.value as LogoChoice)}>
                 <option value="none">No logo</option>
                 <option value="profile" disabled={!profileImageUrl}>Profile photo</option>
                 <option value="company" disabled={!companyLogoUrl}>Company logo</option>
@@ -171,7 +176,7 @@ export default function QRStudio({
           <div className={styles.controlGroup}>
             <h3>Frame</h3>
             <label>Frame style
-              <select value={frameStyle} onChange={(event) => setFrameStyle(event.target.value)}>
+              <select value={frameStyle} onChange={(event) => setFrameStyle(event.target.value as FrameStyle)}>
                 <option value="none">No frame</option><option value="label">Label below preview</option><option value="border">Simple border</option>
               </select>
             </label>
