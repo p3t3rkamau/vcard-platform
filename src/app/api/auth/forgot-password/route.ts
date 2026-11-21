@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { createOneTimeToken } from "@/lib/auth/tokens";
 import { isEmailDeliveryConfigured, sendPasswordResetEmail } from "@/lib/email";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -26,6 +27,10 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
+  }
+
+  if (!(await checkRateLimit(request, "forgot-password", 5, 15 * 60 * 1000, parsed.data.email.toLowerCase()))) {
+    return NextResponse.json(genericResponse);
   }
 
   const user = await prisma.user.findUnique({
