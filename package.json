@@ -33,5 +33,6 @@
     "typescript": "^5.9.0",
     "@types/nodemailer": "^7.0.3",
     "prisma": "7.10.0"
-  }
+  },
+  "packageManager": "pnpm@10.12.1"
 }
