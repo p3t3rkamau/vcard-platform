@@ -40,3 +40,46 @@ See `.env.example`. Never commit `.env` or expose server secrets through `NEXT_P
 - Public visitors can only read published, public profile fields.
 - Profile URLs and QR codes remain valid when card details or templates change.
 - All writes require server-side validation and authorization.
+
+
+## Feature setup
+
+### Local account registration without SMTP
+
+For local development only, set this in your local `.env`:
+
+```env
+ALLOW_UNVERIFIED_LOGIN="true"
+```
+
+This lets you register and sign in locally before configuring an email provider. The bypass is disabled automatically in production, even if the variable is accidentally set to true. Keep the value false in production.
+
+### Vercel Blob images
+
+1. Open your Vercel project and go to **Storage**.
+2. Create a **Blob** store and connect it to this project.
+3. Enable the store for the environments you use.
+4. Ensure `BLOB_READ_WRITE_TOKEN` is present in local `.env` and Vercel Environment Variables.
+
+Profile photos, cover images and company logos accept JPG, PNG and WebP files up to 4 MB.
+
+### Platform administrator
+
+Set `ADMIN_EMAILS` to a comma-separated list of trusted account email addresses. Only those accounts can open `/dashboard/admin`.
+
+### Database update after pulling
+
+The current feature set adds profile reports and persistent rate-limit storage. After pulling the latest `main` branch, run:
+
+```bash
+pnpm install
+pnpm exec prisma format
+pnpm exec prisma validate
+pnpm exec prisma db push
+pnpm exec prisma generate
+pnpm typecheck
+pnpm lint
+pnpm build
+```
+
+Do not enable the platform for public use until these checks pass and email delivery, Blob storage, admin access and production environment variables have been configured.
