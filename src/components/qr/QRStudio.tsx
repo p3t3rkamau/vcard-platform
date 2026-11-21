@@ -132,8 +132,8 @@ export default function QRStudio({
       if (extension === "svg") {
         const parser = new DOMParser();
         const document = parser.parseFromString(await qrBlob.text(), "image/svg+xml");
-        const qrSvg = document.documentElement;
-        if (qrSvg.tagName.toLowerCase() !== "svg" || document.querySelector("parsererror")) {
+        const qrSvg = document.querySelector("svg");
+        if (!qrSvg || document.querySelector("parsererror")) {
           throw new Error("The QR image could not be prepared.");
         }
 
@@ -145,7 +145,7 @@ export default function QRStudio({
         output.setAttribute("height", String(outputHeight));
         output.setAttribute("viewBox", "0 0 1024 " + outputHeight);
 
-        const qr = document.importNode(qrSvg, true) as SVGSVGElement;
+        const qr = document.importNode(qrSvg, true);
         qr.setAttribute("x", "0");
         qr.setAttribute("y", "0");
         qr.setAttribute("width", "1024");
