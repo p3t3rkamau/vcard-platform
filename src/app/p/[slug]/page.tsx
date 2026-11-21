@@ -133,6 +133,17 @@ export default async function PublicCardPage({ params }: PageProps) {
             </div>
           </section>
         )}
+        {query.reported === "1" && <p className={styles.reportSuccess}>Thank you. Your report has been submitted for review.</p>}
+        <details className={styles.reportDetails}>
+          <summary>Report this profile</summary>
+          <form action="/api/reports" method="post">
+            <input type="hidden" name="cardId" value={card.id} />
+            <input className={styles.reportTrap} type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+            <label>Reason<select name="reason" required><option value="SPAM">Spam</option><option value="IMPERSONATION">Impersonation</option><option value="ABUSIVE">Abusive or harmful content</option><option value="MISLEADING">Misleading information</option><option value="OTHER">Other</option></select></label>
+            <label>Additional details<textarea name="details" maxLength={500} rows={3} placeholder="Optional details to help our review." /></label>
+            <button type="submit">Submit report</button>
+          </form>
+        </details>
         <footer className={styles.footer}>Digital business card · <Link href="/">Create yours free</Link></footer>
       </article>
     </main>
