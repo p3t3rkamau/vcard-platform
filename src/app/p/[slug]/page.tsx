@@ -13,7 +13,7 @@ async function getCard(slug: string) {
     where: { slug, status: "PUBLISHED", deletedAt: null },
     include: {
       contactMethods: { where: { isVisible: true }, orderBy: { sortOrder: "asc" } },
-      socialLinks: { where: { isVisible: true }, orderBy: { sortOrder: "asc" } },
+      socialLinks: { where: { isVisible: true }, orderBy: { sortOrder: "asc" } },\n      template: true,
     },
   });
 }
@@ -71,7 +71,7 @@ export default async function PublicCardPage({ params }: PageProps) {
 
   return (
     <main className={styles.page}>
-      <article className={styles.profile}>
+      <article className={styles.profile + " " + (styles[templateClass as keyof typeof styles] || "")}>
         <div className={styles.cover} style={coverImage ? { backgroundImage: 'linear-gradient(120deg, rgba(18,31,70,.2), rgba(18,31,70,.65)), url("' + coverImage + '")' } : undefined} />
         <div className={styles.identity}>
           {profileImage ? (
