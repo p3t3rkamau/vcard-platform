@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -37,6 +38,10 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
   });
   if (!card) notFound();
   const templates = await prisma.template.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } });
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
+  const protocol = (requestHeaders.get("x-forwarded-proto") || "https").split(",")[0].trim();
+  const appBaseUrl = (process.env.NEXT_PUBLIC_APP_URL || (host ? protocol + "://" + host : "http://localhost:3000")).replace(/\\/$/, "");
 
   return (
     <main className={styles.shell}>
