@@ -81,7 +81,12 @@ export default async function PublicCardPage({ params }: PageProps) {
             // eslint-disable-next-line @next/next/no-img-element
             <img className={styles.avatar} src={profileImage} alt={name} />
           ) : <div className={styles.avatarFallback}>{initials}</div>}
-          {companyLogo && <>{/* eslint-disable-next-line @next/next/no-img-element */}<img className={styles.companyLogo} src={companyLogo} alt={card.companyName ? card.companyName + " logo" : "Company logo"} />}
+          {companyLogo && (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img className={styles.companyLogo} src={companyLogo} alt={card.companyName ? card.companyName + " logo" : "Company logo"} />
+            </>
+          )}
           <h1>{name}</h1>
           {(card.jobTitle || card.companyName) && (
             <p className={styles.role}>{[card.jobTitle, card.companyName].filter(Boolean).join(" · ")}</p>
