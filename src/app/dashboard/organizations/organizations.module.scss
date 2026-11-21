@@ -1,0 +1,40 @@
+.createPanel {
+  margin-bottom: 30px;
+  padding: 22px;
+  border: 1px solid #e8ebf2;
+  border-radius: 15px;
+  background: #fff;
+  h2 { margin: 0 0 7px; font-size: 18px; }
+  p { margin: 0 0 15px; color: #667085; font-size: 13px; line-height: 1.6; }
+  form { display: flex; flex-wrap: wrap; gap: 9px; }
+  input, select { min-height: 42px; min-width: 0; flex: 1 1 210px; padding: 0 11px; border: 1px solid #d8deea; border-radius: 8px; background: #fff; color: #344054; }
+  button { min-height: 42px; padding: 0 15px; border: 0; border-radius: 8px; background: #3157d5; color: #fff; font-size: 12px; font-weight: 750; cursor: pointer; }
+}
+.list {
+  display: grid;
+  gap: 12px;
+  > h2 { margin: 0 0 4px; font-size: 18px; }
+}
+.empty { margin: 0; padding: 20px; border: 1px dashed #d8deea; border-radius: 12px; color: #667085; font-size: 13px; }
+.orgCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 18px;
+  border: 1px solid #e8ebf2;
+  border-radius: 13px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  h3 { margin: 0 0 5px; font-size: 16px; }
+  p { margin: 0; color: #667085; font-size: 12px; }
+}
+.counts { display: flex; flex-wrap: wrap; gap: 12px; color: #667085; font-size: 12px; }
+.memberCard { padding: 18px; border: 1px solid #e8ebf2; border-radius: 13px; background: #fff; }
+.memberHead { display: flex; justify-content: space-between; gap: 12px; align-items: center; h3 { margin: 0 0 4px; font-size: 15px; } p { margin: 0; color: #667085; font-size: 12px; } span { padding: 5px 9px; border-radius: 999px; background: #f2f4f7; color: #475467; font-size: 10px; font-weight: 750; text-transform: uppercase; } }
+.employeeCards { display: grid; gap: 7px; margin-top: 14px; a { display: flex; justify-content: space-between; gap: 10px; padding: 10px; border-radius: 8px; background: #f8f9fc; color: #344054; font-size: 12px; text-decoration: none; } small { color: #667085; } p { margin: 0; color: #98a2b3; font-size: 12px; } }
+.memberActions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; form { display: flex; flex-wrap: wrap; gap: 7px; } select, button { min-height: 34px; padding: 0 10px; border: 1px solid #e3e7ef; border-radius: 7px; background: #fff; color: #344054; font-size: 11px; cursor: pointer; } button { background: #f7f8fb; } }
+.back { color: #667085; font-size: 13px; text-decoration: none; }
+.error { padding: 11px 13px; border-radius: 9px; background: #fff1f0; color: #b42318; font-size: 13px; }
+@media (max-width: 580px) { .orgCard { align-items: flex-start; flex-direction: column; } }
