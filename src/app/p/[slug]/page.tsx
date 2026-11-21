@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import styles from "./profile.module.scss";
 
-type PageProps = { params: Promise<{ slug: string }> };
+type PageProps = { params: Promise<{ slug: string }>; searchParams: Promise<{ source?: string; reported?: string }> };
 
 export const dynamic = "force-dynamic";
 
@@ -51,8 +52,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function PublicCardPage({ params }: PageProps) {
-  const { slug } = await params;
+export default async function PublicCardPage({ params, searchParams }: PageProps) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
   const card = await getCard(slug);
 
   if (!card) {
@@ -71,6 +72,18 @@ export default async function PublicCardPage({ params }: PageProps) {
   const companyLogo = safeExternalUrl(card.companyLogoUrl);
   const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
   const templateClass = (card.template?.slug || "modern-corporate").replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+  const requestHeaders = await headers();
+  const userAgent = requestHeaders.get("user-agent") || "";
+  const isBot = /bot|crawler|spider|preview|facebookexternalhit|slackbot/i.test(userAgent);
+  if (!isBot) {
+    const referrer = requestHeaders.get("referer");
+    let referrerDomain: string | null = null;
+    try { referrerDomain = referrer ? new URL(referrer).hostname.slice(0, 190) : null; } catch { referrerDomain = null; }
+    const countryHeader = requestHeaders.get("x-vercel-ip-country");
+    const countryCode = countryHeader && /^[A-Z]{2}$/.test(countryHeader) ? countryHeader : null;
+    const eventTypes = query.source === "qr" ? ["PROFILE_VIEW", "QR_SCAN"] as const : ["PROFILE_VIEW"] as const;
+    await prisma.analyticsEvent.createMany({ data: eventTypes.map((eventType) => ({ businessCardId: card.id, eventType, countryCode, referrerDomain })) }).catch(() => undefined);
+  }
 
   return (
     <main className={styles.page}>
