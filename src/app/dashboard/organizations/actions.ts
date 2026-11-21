@@ -75,9 +75,9 @@ export async function addOrganizationMember(formData: FormData) {
 
   const memberUser = await prisma.user.findUnique({
     where: { email: parsed.data.email.toLowerCase() },
-    select: { id: true },
+    select: { id: true, emailVerified: true },
   });
-  if (!memberUser) redirect("/dashboard/organizations/" + parsed.data.organizationId + "?error=user-not-found");
+  if (!memberUser || !memberUser.emailVerified) redirect("/dashboard/organizations/" + parsed.data.organizationId + "?error=user-not-found");
   if (memberUser.id === userId) redirect("/dashboard/organizations/" + parsed.data.organizationId + "?error=already-member");
   const existingMembership = await prisma.organizationMember.findUnique({
     where: { organizationId_userId: { organizationId: parsed.data.organizationId, userId: memberUser.id } },
