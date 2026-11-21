@@ -3,17 +3,20 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import styles from "./profile.module.scss";
+import { ensureDefaultTemplates } from "@/lib/templates";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
 export const dynamic = "force-dynamic";
 
 async function getCard(slug: string) {
+  await ensureDefaultTemplates();
   return prisma.businessCard.findFirst({
     where: { slug, status: "PUBLISHED", deletedAt: null },
     include: {
       contactMethods: { where: { isVisible: true }, orderBy: { sortOrder: "asc" } },
-      socialLinks: { where: { isVisible: true }, orderBy: { sortOrder: "asc" } },\n      template: true,
+      socialLinks: { where: { isVisible: true }, orderBy: { sortOrder: "asc" } },
+      template: true,
     },
   });
 }
@@ -68,6 +71,7 @@ export default async function PublicCardPage({ params }: PageProps) {
   const profileImage = safeExternalUrl(card.profileImageUrl);
   const coverImage = safeExternalUrl(card.coverImageUrl);
   const initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+  const templateClass = (card.template?.slug || "modern-corporate").replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
 
   return (
     <main className={styles.page}>
