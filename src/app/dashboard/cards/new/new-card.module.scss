@@ -188,3 +188,49 @@
   color: #b42318;
   font-size: 13px;
 }
+
+
+.templateGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+  > button {
+    grid-column: 1 / -1;
+    min-height: 44px;
+    border: 0;
+    border-radius: 9px;
+    background: #3157d5;
+    color: #fff;
+    font-weight: 750;
+    cursor: pointer;
+  }
+}
+.templateOption {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid #e1e6ef;
+  border-radius: 11px;
+  background: #fff;
+  cursor: pointer;
+  input { width: 16px; height: 16px; accent-color: #3157d5; }
+  strong { color: #344054; font-size: 12px; }
+  small { color: #667085; font-size: 11px; line-height: 1.4; }
+  &:has(input:checked) { border-color: #3157d5; box-shadow: 0 0 0 2px rgba(49,87,213,.1); }
+}
+.templateSwatch {
+  display: block;
+  height: 58px;
+  border-radius: 7px;
+  background: linear-gradient(120deg, #172b65, #4164d8);
+}
+.modern-corporate { background: linear-gradient(120deg, #172b65, #4164d8); }
+.minimal-professional { background: #f1f3f6; border: 1px solid #e1e6ef; }
+.executive-dark { background: linear-gradient(120deg, #080d18, #64748b); }
+.creative-portfolio { background: linear-gradient(120deg, #ff6b6b, #845ec2, #00c9a7); }
+.elegant-business { background: linear-gradient(120deg, #e8dfd2, #65513d); }
+.gradient-modern { background: linear-gradient(120deg, #4f46e5, #9333ea, #ec4899); }
+.personal-branding { background: linear-gradient(120deg, #0f766e, #164e63, #1e293b); }
+.luxury-corporate { background: linear-gradient(120deg, #101827, #b59a66); }
+@media (max-width: 520px) { .templateGrid { grid-template-columns: 1fr; } }
