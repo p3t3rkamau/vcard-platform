@@ -22,7 +22,12 @@ export async function GET(request: Request, { params }: RouteProps) {
     const cardWebsite = await prisma.businessCard.findFirst({ where: { id: card.id }, select: { website: true } });
     const destination = cardWebsite?.website ? safeUrl(cardWebsite.website) : null;
     if (!destination) return NextResponse.json({ error: "Link not found" }, { status: 404 });
-    await prisma.analyticsEvent.create({ data: { businessCardId: card.id, eventType: "WEBSITE_CLICK" } }).catch(() => undefined);
+    const userAgent = request.headers.get("user-agent") || "";
+    if (!/bot|crawler|spider|preview/i.test(userAgent)) {
+      const countryHeader = request.headers.get("x-vercel-ip-country");
+      const countryCode = countryHeader && /^[A-Z]{2}$/.test(countryHeader) ? countryHeader : null;
+      await prisma.analyticsEvent.create({ data: { businessCardId: card.id, eventType: "WEBSITE_CLICK", countryCode } }).catch(() => undefined);
+    }
     return NextResponse.redirect(destination, 302);
   }
 
