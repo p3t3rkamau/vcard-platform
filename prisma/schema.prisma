@@ -379,3 +379,14 @@ model ProfileReport {
   @@index([reporterUserId])
   @@map("profile_reports")
 }
+
+
+model RateLimitBucket {
+  key             String   @id
+  count           Int      @default(0)
+  windowStartedAt DateTime
+  expiresAt       DateTime
+
+  @@index([expiresAt])
+  @@map("rate_limit_buckets")
+}
