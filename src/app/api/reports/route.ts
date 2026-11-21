@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   });
   if (!parsed.success || parsed.data.website) return NextResponse.json({ error: "Invalid report" }, { status: 400 });
 
-  if (!(await checkRateLimit(request, "profile-report", 3, 60 * 60 * 1000, parsed.data.cardId))) {
+  if (!(await checkRateLimit(request, "profile-report-global", 10, 60 * 60 * 1000)) || !(await checkRateLimit(request, "profile-report", 3, 60 * 60 * 1000, parsed.data.cardId))) {
     return NextResponse.json({ error: "Too many reports. Please try again later." }, { status: 429 });
   }
 
