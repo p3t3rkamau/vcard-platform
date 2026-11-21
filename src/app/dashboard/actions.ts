@@ -259,7 +259,7 @@ const socialSchema = z.object({
 async function requireOwnedCard(cardId: string, userId: string) {
   return prisma.businessCard.findFirst({
     where: { id: cardId, ownerId: userId, deletedAt: null },
-    select: { id: true },
+    select: { id: true, slug: true },
   });
 }
 
@@ -384,6 +384,6 @@ export async function updateCardTemplate(formData: FormData) {
   });
 
   revalidatePath("/dashboard/cards/" + card.id + "/edit");
-  revalidatePath("/p");
+  revalidatePath("/p/" + card.slug);
   redirect("/dashboard/cards/" + card.id + "/edit?template=updated");
 }
