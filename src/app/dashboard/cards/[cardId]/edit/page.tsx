@@ -19,7 +19,7 @@ import { assignCardToOrganization } from "@/app/dashboard/organizations/actions"
 
 type EditCardPageProps = {
   params: Promise<{ cardId: string }>;
-  searchParams: Promise<{ created?: string; duplicated?: string; contact?: string; social?: string; template?: string; media?: string; mediaType?: string; organization?: string; error?: string }>;
+  searchParams: Promise<{ created?: string; duplicated?: string; contact?: string; social?: string; template?: string; media?: string; mediaType?: string; reason?: string; organization?: string; error?: string }>;
 };
 
 export default async function EditCardPage({ params, searchParams }: EditCardPageProps) {
@@ -67,7 +67,7 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
         {query.media === "uploaded" && <p className={formStyles.success}>{query.mediaType?.replaceAll("_", " ").toLowerCase()} uploaded successfully.</p>}
         {query.media === "not-configured" && <p className={formStyles.error}>Vercel Blob is not connected yet. Add BLOB_READ_WRITE_TOKEN to your environment.</p>}
         {query.media === "invalid-file" && <p className={formStyles.error}>Choose a JPG, PNG or WebP image smaller than 4 MB.</p>}
-        {query.media === "failed" && <p className={formStyles.error}>The image could not be uploaded. Please try again.</p>}
+        {query.media === "failed" && query.reason === "blob" && <p className={formStyles.error}>Vercel Blob rejected the upload. Check that BLOB_READ_WRITE_TOKEN is set for this environment and belongs to the connected Blob store. The server log contains the exact error.</p>}\n        {query.media === "failed" && query.reason === "database" && <p className={formStyles.error}>The image reached Blob storage, but the profile could not be updated in the database. Check the Neon connection and server logs.</p>}\n        {query.media === "failed" && !query.reason && <p className={formStyles.error}>The image could not be uploaded. Check the server logs for the upload error.</p>}
         {query.media === "rate-limited" && <p className={formStyles.error}>You have uploaded too many images recently. Please try again later.</p>}
         {query.organization === "updated" && <p className={formStyles.success}>Organization assignment updated.</p>}
         {query.error === "organization" && <p className={formStyles.error}>You do not have permission to link this card to that organization.</p>}
