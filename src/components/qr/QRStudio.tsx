@@ -123,7 +123,115 @@ export default function QRStudio({
 
   async function download(extension: "png" | "svg") {
     if (!qrRef.current) return;
-    await qrRef.current.download({ name: "vcard-" + slug, extension });
+
+    try {
+      const qrBlob = await qrRef.current.getRawData("svg");
+      if (!(qrBlob instanceof Blob)) throw new Error("QR export is unavailable.");
+
+      let outputBlob: Blob;
+      if (extension === "svg") {
+        const parser = new DOMParser();
+        const document = parser.parseFromString(await qrBlob.text(), "image/svg+xml");
+        const qrSvg = document.documentElement;
+        if (qrSvg.tagName.toLowerCase() !== "svg" || document.querySelector("parsererror")) {
+          throw new Error("The QR image could not be prepared.");
+        }
+
+        const namespace = "http://www.w3.org/2000/svg";
+        const outputHeight = frameStyle === "label" ? 1120 : 1024;
+        const output = document.createElementNS(namespace, "svg");
+        output.setAttribute("xmlns", namespace);
+        output.setAttribute("width", "1024");
+        output.setAttribute("height", String(outputHeight));
+        output.setAttribute("viewBox", "0 0 1024 " + outputHeight);
+
+        const qr = document.importNode(qrSvg, true) as SVGSVGElement;
+        qr.setAttribute("x", "0");
+        qr.setAttribute("y", "0");
+        qr.setAttribute("width", "1024");
+        qr.setAttribute("height", "1024");
+        qr.setAttribute("viewBox", qrSvg.getAttribute("viewBox") || "0 0 1024 1024");
+        output.appendChild(qr);
+
+        if (frameStyle === "border") {
+          const border = document.createElementNS(namespace, "rect");
+          border.setAttribute("x", "8");
+          border.setAttribute("y", "8");
+          border.setAttribute("width", "1008");
+          border.setAttribute("height", "1008");
+          border.setAttribute("fill", "none");
+          border.setAttribute("stroke", foregroundColor);
+          border.setAttribute("stroke-width", "8");
+          output.appendChild(border);
+        }
+
+        if (frameStyle === "label") {
+          const label = document.createElementNS(namespace, "text");
+          label.setAttribute("x", "512");
+          label.setAttribute("y", "1080");
+          label.setAttribute("text-anchor", "middle");
+          label.setAttribute("font-family", "Arial, sans-serif");
+          label.setAttribute("font-size", "34");
+          label.setAttribute("font-weight", "700");
+          label.setAttribute("fill", foregroundColor);
+          label.textContent = frameText.trim() || "SCAN TO CONNECT";
+          output.appendChild(label);
+        }
+
+        outputBlob = new Blob([new XMLSerializer().serializeToString(output)], {
+          type: "image/svg+xml;charset=utf-8",
+        });
+      } else {
+        const sourceUrl = URL.createObjectURL(qrBlob);
+        try {
+          const image = new Image();
+          image.src = sourceUrl;
+          await image.decode();
+
+          const outputHeight = frameStyle === "label" ? 1120 : 1024;
+          const canvas = document.createElement("canvas");
+          canvas.width = 1024;
+          canvas.height = outputHeight;
+          const context = canvas.getContext("2d");
+          if (!context) throw new Error("Canvas export is unavailable.");
+
+          context.fillStyle = backgroundColor;
+          context.fillRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(image, 0, 0, 1024, 1024);
+
+          if (frameStyle === "border") {
+            context.strokeStyle = foregroundColor;
+            context.lineWidth = 8;
+            context.strokeRect(8, 8, 1008, 1008);
+          }
+
+          if (frameStyle === "label") {
+            context.fillStyle = foregroundColor;
+            context.font = "700 34px Arial, sans-serif";
+            context.textAlign = "center";
+            context.textBaseline = "middle";
+            context.fillText((frameText.trim() || "SCAN TO CONNECT").slice(0, 40), 512, 1070, 960);
+          }
+
+          outputBlob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("PNG export failed.")), "image/png");
+          });
+        } finally {
+          URL.revokeObjectURL(sourceUrl);
+        }
+      }
+
+      const downloadUrl = URL.createObjectURL(outputBlob);
+      const anchor = document.createElement("a");
+      anchor.href = downloadUrl;
+      anchor.download = "vcard-" + slug + "." + extension;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(downloadUrl);
+    } catch {
+      setMessage("The QR download failed. Please try again or remove the frame and retry.");
+    }
   }
 
   return (
