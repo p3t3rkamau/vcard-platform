@@ -11,11 +11,12 @@ export default async function AdminPage() {
   const session = await auth();
   if (!session?.user?.id || !isAdminEmail(session.user.email)) redirect("/dashboard");
 
-  const [users, cards, reports, organizations] = await Promise.all([
+  const [users, cards, reports, organizations, userCount] = await Promise.all([
     prisma.user.findMany({ orderBy: { createdAt: "desc" }, take: 50, select: { id: true, name: true, email: true, createdAt: true } }),
     prisma.businessCard.findMany({ orderBy: { updatedAt: "desc" }, take: 50, include: { owner: { select: { name: true, email: true } } } }),
     prisma.profileReport.findMany({ where: { status: "OPEN" }, orderBy: { createdAt: "desc" }, take: 50, include: { businessCard: { select: { id: true, slug: true, displayName: true, status: true } }, reporter: { select: { email: true } } } }),
     prisma.organization.count(),
+    prisma.user.count(),
   ]);
 
   return (
@@ -23,7 +24,7 @@ export default async function AdminPage() {
       <header className={styles.topbar}><Link className={styles.brand} href="/dashboard">VCARD PLATFORM</Link><Link className={adminStyles.back} href="/dashboard">← Dashboard</Link></header>
       <section className={styles.heading}><div><h1>Platform administration</h1><p>Review accounts, published cards and community reports.</p></div></section>
       <div className={adminStyles.stats}>
-        <article><span>Users</span><strong>{users.length}</strong></article>
+        <article><span>Total users</span><strong>{userCount}</strong></article>
         <article><span>Cards in latest 50</span><strong>{cards.length}</strong></article>
         <article><span>Open reports</span><strong>{reports.length}</strong></article>
         <article><span>Organizations</span><strong>{organizations}</strong></article>
