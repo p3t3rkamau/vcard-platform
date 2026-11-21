@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { createOneTimeToken } from "@/lib/auth/tokens";
 import { isEmailDeliveryConfigured, sendVerificationEmail } from "@/lib/email";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -30,14 +31,17 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!isEmailDeliveryConfigured()) {
+  const email = parsed.data.email.toLowerCase();
+  const developmentVerificationBypass = process.env.NODE_ENV !== "production" && process.env.ALLOW_UNVERIFIED_LOGIN === "true";
+  if (!(await checkRateLimit(request, "register", 5, 15 * 60 * 1000, email))) {
+    return NextResponse.json({ error: "Too many registration attempts. Please try again later." }, { status: 429 });
+  }
+  if (!isEmailDeliveryConfigured() && !developmentVerificationBypass) {
     return NextResponse.json(
       { error: "Email delivery is not configured yet. Configure SMTP before registering users." },
       { status: 503 },
     );
   }
-
-  const email = parsed.data.email.toLowerCase();
   const existingUser = await prisma.user.findUnique({ where: { email } });
 
   if (existingUser) {
@@ -56,28 +60,32 @@ export async function POST(request: Request) {
         name: parsed.data.name,
         email,
         passwordHash,
-        emailVerificationTokens: {
-          create: {
-            tokenHash,
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        ...(developmentVerificationBypass ? { emailVerified: new Date() } : {
+          emailVerificationTokens: {
+            create: {
+              tokenHash,
+              expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+            },
           },
-        },
+        }),
       },
     });
 
-    try {
-      await sendVerificationEmail(email, token);
-    } catch (error) {
-      await prisma.user.delete({ where: { id: user.id } });
-      console.error("Verification email delivery failed:", error);
-      return NextResponse.json(
-        { error: "We couldn't send the verification email. Check SMTP settings and try again." },
-        { status: 503 },
-      );
+    if (!developmentVerificationBypass) {
+      try {
+        await sendVerificationEmail(email, token);
+      } catch (error) {
+        await prisma.user.delete({ where: { id: user.id } });
+        console.error("Verification email delivery failed:", error);
+        return NextResponse.json(
+          { error: "We couldn't send the verification email. Check SMTP settings and try again." },
+          { status: 503 },
+        );
+      }
     }
 
     return NextResponse.json(
-      { message: "Account created. Check your inbox to verify your email before signing in." },
+      { message: developmentVerificationBypass ? "Account created. You can sign in in this development environment." : "Account created. Check your inbox to verify your email before signing in." },
       { status: 201 },
     );
   } catch (error) {
