@@ -14,7 +14,8 @@ export default async function AnalyticsPage() {
     select: { id: true, slug: true, displayName: true, status: true },
     orderBy: { updatedAt: "desc" },
   });
-  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const [timeWindow] = await prisma.$queryRaw<Array<{ since: Date }>>`SELECT NOW() - INTERVAL '30 days' AS since`;
+  const since = timeWindow.since;
   const metrics = await Promise.all(cards.map(async (card) => {
     const [views, scans, saves, websiteClicks, socialClicks] = await Promise.all([
       prisma.analyticsEvent.count({ where: { businessCardId: card.id, eventType: "PROFILE_VIEW", createdAt: { gte: since } } }),
@@ -45,7 +46,7 @@ export default async function AnalyticsPage() {
         <h2>Card performance</h2>
         {metrics.length === 0 ? <p>Create a card to start collecting analytics.</p> : (
           <div className={analyticsStyles.tableWrap}>
-            <table>
+            <table className={analyticsStyles.table}>
               <thead><tr><th>Card</th><th>Views</th><th>QR scans</th><th>Contact saves</th><th>Website</th><th>Social</th></tr></thead>
               <tbody>{metrics.map((card) => <tr key={card.id}><td><Link href={"/p/" + card.slug} target="_blank">{card.displayName || "Untitled card"}</Link><small>{card.status.toLowerCase()}</small></td><td>{card.views}</td><td>{card.scans}</td><td>{card.saves}</td><td>{card.websiteClicks}</td><td>{card.socialClicks}</td></tr>)}</tbody>
             </table>
