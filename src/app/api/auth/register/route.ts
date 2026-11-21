@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
   const email = parsed.data.email.toLowerCase();
   const developmentVerificationBypass = process.env.NODE_ENV !== "production" && process.env.ALLOW_UNVERIFIED_LOGIN === "true";
-  if (!(await checkRateLimit(request, "register", 5, 15 * 60 * 1000, email))) {
+  if (!(await checkRateLimit(request, "register-global", 12, 60 * 60 * 1000)) || !(await checkRateLimit(request, "register", 5, 15 * 60 * 1000, email))) {
     return NextResponse.json({ error: "Too many registration attempts. Please try again later." }, { status: 429 });
   }
   if (!isEmailDeliveryConfigured() && !developmentVerificationBypass) {
