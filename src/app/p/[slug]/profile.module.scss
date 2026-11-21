@@ -98,3 +98,69 @@
   .profile { min-height: 100svh; border: 0; border-radius: 0; box-shadow: none; }
   .section { padding-right: 22px; padding-left: 22px; }
 }
+
+
+/* Eight distinct, data-driven profile themes */
+.minimalProfessional {
+  border-radius: 12px;
+  box-shadow: 0 12px 42px rgba(23, 35, 75, .05);
+  .cover { height: 82px; background: #f1f3f6; }
+  .avatar, .avatarFallback { border-radius: 18px; }
+  .saveButton { border-radius: 5px; background: #182230; border-color: #182230; }
+}
+.executiveDark {
+  border-color: #263247;
+  background: #111827;
+  .identity h1, .section h2 { color: #f8fafc; }
+  .role, .bio, .contactItem p { color: #cbd5e1; }
+  .cover { background: linear-gradient(130deg, #080d18, #263247 60%, #64748b); }
+  .avatar { border-color: #111827; }
+  .avatarFallback { border-color: #111827; background: #263247; color: #f8fafc; }
+  .section, .footer { border-color: #263247; }
+  .contactItem a { color: #c4b5fd; }
+  .socials a { border-color: #39465c; color: #e2e8f0; }
+  .saveButton { border-color: #c8a96a; background: #c8a96a; color: #111827; }
+  .secondaryButton { border-color: #39465c; background: #1e293b; color: #f8fafc; }
+  .footer { color: #94a3b8; a { color: #c8a96a; } }
+}
+.creativePortfolio {
+  border-radius: 28px;
+  .cover { height: 190px; background: linear-gradient(125deg, #ff6b6b, #845ec2 55%, #00c9a7); }
+  .avatar, .avatarFallback { border-radius: 28px; }
+  .saveButton { border-radius: 999px; background: #6d28d9; border-color: #6d28d9; }
+  .section h2 { color: #6d28d9; }
+}
+.elegantBusiness {
+  border-radius: 8px;
+  .cover { height: 115px; background: linear-gradient(120deg, #e8dfd2, #b7a58e); }
+  .identity h1 { font-family: Georgia, serif; font-weight: 500; letter-spacing: -.02em; }
+  .saveButton { border-radius: 4px; background: #65513d; border-color: #65513d; }
+  .section h2 { font-family: Georgia, serif; font-size: 15px; font-weight: 500; }
+}
+.gradientModern {
+  border: 0;
+  .cover { height: 205px; background: linear-gradient(120deg, #4f46e5, #9333ea 55%, #ec4899); }
+  .saveButton { border: 0; background: linear-gradient(100deg, #4f46e5, #9333ea); }
+  .avatar, .avatarFallback { border-radius: 25px; }
+}
+.personalBranding {
+  border-radius: 30px;
+  .cover { height: 235px; background: linear-gradient(135deg, #0f766e, #164e63 55%, #1e293b); }
+  .identity { text-align: left; }
+  .avatar, .avatarFallback { margin-left: 0; border-radius: 22px; }
+  .identity h1 { font-size: 31px; }
+  .bio { margin-left: 0; }
+  .actions { justify-content: flex-start; }
+  .saveButton { border-radius: 999px; background: #0f766e; border-color: #0f766e; }
+}
+.luxuryCorporate {
+  border-radius: 4px;
+  border-color: #d8c9a8;
+  .cover { height: 125px; background: linear-gradient(120deg, #101827, #26364d 65%, #b59a66); }
+  .identity h1 { font-family: Georgia, serif; font-weight: 500; }
+  .saveButton { border-radius: 3px; background: #9a7b43; border-color: #9a7b43; }
+  .section h2 { color: #8a7042; letter-spacing: .12em; text-transform: uppercase; }
+}
+.modernCorporate {
+  .cover { background: linear-gradient(130deg, #172b65, #4164d8 58%, #9aaaf0); }
+}
