@@ -107,7 +107,7 @@ export default async function PublicCardPage({ params }: PageProps) {
                   <div className={styles.contactItem} key={method.id}>
                     <span>{method.label || method.type.toLowerCase()}</span>
                     {href && href.startsWith("http") ? (
-                      <a href={href} target="_blank" rel="noreferrer">{method.value}</a>
+                      <a href={"/api/cards/" + card.slug + "/links/" + method.id} target="_blank" rel="noreferrer">{method.value}</a>
                     ) : href ? <a href={href}>{method.value}</a> : <p>{method.value}</p>}
                   </div>
                 );
@@ -123,7 +123,7 @@ export default async function PublicCardPage({ params }: PageProps) {
             <div className={styles.socials}>
               {card.socialLinks.map((social) => {
                 const url = safeExternalUrl(social.url);
-                return url ? <a key={social.id} href={url} target="_blank" rel="noreferrer">{social.label || social.platform}</a> : null;
+                return url ? <a key={social.id} href={"/api/cards/" + card.slug + "/links/" + social.id} target="_blank" rel="noreferrer">{social.label || social.platform}</a> : null;
               })}
             </div>
           </section>
