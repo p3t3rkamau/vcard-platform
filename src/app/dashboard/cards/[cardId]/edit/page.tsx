@@ -16,7 +16,7 @@ import { ensureDefaultTemplates } from "@/lib/templates";
 
 type EditCardPageProps = {
   params: Promise<{ cardId: string }>;
-  searchParams: Promise<{ created?: string; duplicated?: string; contact?: string; social?: string; template?: string; error?: string }>;
+  searchParams: Promise<{ created?: string; duplicated?: string; contact?: string; social?: string; template?: string; media?: string; mediaType?: string; error?: string }>;
 };
 
 export default async function EditCardPage({ params, searchParams }: EditCardPageProps) {
@@ -53,6 +53,10 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
         {query.contact === "added" && <p className={formStyles.success}>Contact method added.</p>}
         {query.social === "added" && <p className={formStyles.success}>Social link added.</p>}
         {query.template === "updated" && <p className={formStyles.success}>Your card design has been updated.</p>}
+        {query.media === "uploaded" && <p className={formStyles.success}>{query.mediaType?.replaceAll("_", " ").toLowerCase()} uploaded successfully.</p>}
+        {query.media === "not-configured" && <p className={formStyles.error}>Vercel Blob is not connected yet. Add BLOB_READ_WRITE_TOKEN to your environment.</p>}
+        {query.media === "invalid-file" && <p className={formStyles.error}>Choose a JPG, PNG or WebP image smaller than 4 MB.</p>}
+        {query.media === "failed" && <p className={formStyles.error}>The image could not be uploaded. Please try again.</p>}
         {query.error && <p className={formStyles.error}>Please check the information and try again.</p>}
 
         <div className={formStyles.section}>
@@ -73,6 +77,30 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
             ))}
             <button type="submit">Apply selected design</button>
           </form>
+        </div>
+
+        <div className={formStyles.section}>
+          <div className={formStyles.sectionHeading}>
+            <div><span className={formStyles.step}>BRANDING</span><h2>Profile images</h2></div>
+            <span className={formStyles.count}>JPG · PNG · WebP · 4 MB max</span>
+          </div>
+          <div className={formStyles.mediaGrid}>
+            {([
+              { type: "PROFILE_IMAGE", label: "Profile photo", url: card.profileImageUrl },
+              { type: "COVER_IMAGE", label: "Cover image", url: card.coverImageUrl },
+              { type: "COMPANY_LOGO", label: "Company logo", url: card.companyLogoUrl },
+            ] as const).map((item) => (
+              <div className={formStyles.mediaCard} key={item.type}>
+                <strong>{item.label}</strong>
+                {item.url ? <img src={item.url} alt={item.label} /> : <div className={formStyles.mediaPlaceholder}>No image uploaded</div>}
+                <form action={"/api/cards/" + card.id + "/media"} method="post" encType="multipart/form-data">
+                  <input type="hidden" name="type" value={item.type} />
+                  <input type="file" name="file" accept="image/jpeg,image/png,image/webp" required />
+                  <button type="submit">Upload {item.label.toLowerCase()}</button>
+                </form>
+              </div>
+            ))}
+          </div>
         </div>
 
         <form action={updateBusinessCardDetails} className={formStyles.form}>
