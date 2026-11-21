@@ -65,14 +65,14 @@ export default function QRStudio({
   useEffect(() => {
     let active = true;
     const options = {
-      width: 320,
-      height: 320,
+      width: 1024,
+      height: 1024,
       type: "svg" as const,
       data: profileUrl + "?source=qr",
       margin: 12,
       qrOptions: { errorCorrectionLevel },
       image: logoUrl || undefined,
-      imageOptions: { hideBackgroundDots: true, imageSize: 0.26, margin: 7, crossOrigin: "anonymous" as const },
+      imageOptions: { hideBackgroundDots: true, imageSize: 0.26, margin: 7, crossOrigin: "anonymous" as const, saveAsBlob: true },
       dotsOptions: { color: foregroundColor, type: dotsType },
       backgroundOptions: { color: backgroundColor },
       cornersSquareOptions: { color: foregroundColor, type: cornersSquareType },
