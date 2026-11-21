@@ -7,14 +7,14 @@ import {
   addSocialLink,
   removeContactMethod,
   removeSocialLink,
-  updateBusinessCardDetails,
+  updateBusinessCardDetails,\n  updateCardTemplate,
 } from "../../../actions";
 import styles from "../../../dashboard.module.scss";
-import formStyles from "../../new/new-card.module.scss";
+import formStyles from "../../new/new-card.module.scss";\nimport { ensureDefaultTemplates } from "@/lib/templates";
 
 type EditCardPageProps = {
   params: Promise<{ cardId: string }>;
-  searchParams: Promise<{ created?: string; duplicated?: string; contact?: string; social?: string; error?: string }>;
+  searchParams: Promise<{ created?: string; duplicated?: string; contact?: string; social?: string; template?: string; error?: string }>;
 };
 
 export default async function EditCardPage({ params, searchParams }: EditCardPageProps) {
@@ -22,14 +22,14 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
   if (!session?.user?.id) redirect("/login");
 
   const [{ cardId }, query] = await Promise.all([params, searchParams]);
-  const card = await prisma.businessCard.findFirst({
+  await ensureDefaultTemplates();\n  const card = await prisma.businessCard.findFirst({
     where: { id: cardId, ownerId: session.user.id, deletedAt: null },
     include: {
       contactMethods: { orderBy: { sortOrder: "asc" } },
-      socialLinks: { orderBy: { sortOrder: "asc" } },
+      socialLinks: { orderBy: { sortOrder: "asc" } },\n      template: true,
     },
   });
-  if (!card) notFound();
+  if (!card) notFound();\n  const templates = await prisma.template.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } });
 
   return (
     <main className={styles.shell}>
@@ -46,8 +46,28 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
         {query.created === "1" && <p className={formStyles.success}>Your digital card has been created.</p>}
         {query.duplicated === "1" && <p className={formStyles.success}>A draft copy has been created.</p>}
         {query.contact === "added" && <p className={formStyles.success}>Contact method added.</p>}
-        {query.social === "added" && <p className={formStyles.success}>Social link added.</p>}
+        {query.social === "added" && <p className={formStyles.success}>Social link added.</p>}\n        {query.template === "updated" && <p className={formStyles.success}>Your card design has been updated.</p>}
         {query.error && <p className={formStyles.error}>Please check the information and try again.</p>}
+
+        <div className={formStyles.section}>
+          <div className={formStyles.sectionHeading}>
+            <div><span className={formStyles.step}>DESIGN</span><h2>Choose a template</h2></div>
+            <span className={formStyles.count}>{templates.length} designs</span>
+          </div>
+          <p className={formStyles.helper}>Switch designs at any time. Your profile details, contacts and social links stay unchanged.</p>
+          <form action={updateCardTemplate} className={formStyles.templateGrid}>
+            <input type="hidden" name="cardId" value={card.id} />
+            {templates.map((template) => (
+              <label className={formStyles.templateOption} key={template.id}>
+                <input type="radio" name="templateSlug" value={template.slug} defaultChecked={card.template?.slug === template.slug || (!card.template && template.slug === "modern-corporate")} />
+                <span className={formStyles.templateSwatch + " " + formStyles[template.slug as keyof typeof formStyles]} aria-hidden="true" />
+                <strong>{template.name}</strong>
+                <small>{template.description}</small>
+              </label>
+            ))}
+            <button type="submit">Apply selected design</button>
+          </form>
+        </div>
 
         <form action={updateBusinessCardDetails} className={formStyles.form}>
           <input type="hidden" name="cardId" value={card.id} />
