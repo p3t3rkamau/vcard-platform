@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { isAdminEmail } from "@/lib/admin";
 import {
   archiveBusinessCard,
   deleteBusinessCard,
@@ -62,7 +63,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           <h1>Your cards</h1>
           <p>Create and manage your digital identity from one place.</p>
         </div>
-        <div className={styles.dashboardActions}><Link className={styles.actionLink} href="/dashboard/organizations">Organizations</Link><Link className={styles.actionLink} href="/dashboard/analytics">Analytics</Link><Link className={styles.primaryButton} href="/dashboard/cards/new">＋ Create a card</Link></div>
+        <div className={styles.dashboardActions}><Link className={styles.actionLink} href="/dashboard/organizations">Organizations</Link><Link className={styles.actionLink} href="/dashboard/analytics">Analytics</Link>{isAdminEmail(session.user.email) && <Link className={styles.actionLink} href="/dashboard/admin">Admin</Link>}<Link className={styles.primaryButton} href="/dashboard/cards/new">＋ Create a card</Link></div>
       </section>
 
       {query.updated === "1" && <p className={styles.notice}>Your card details have been saved.</p>}
