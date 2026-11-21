@@ -15,6 +15,7 @@ import styles from "../../../dashboard.module.scss";
 import formStyles from "../../new/new-card.module.scss";
 import { ensureDefaultTemplates } from "@/lib/templates";
 import QRStudio from "@/components/qr/QRStudio";
+import { assignCardToOrganization } from "@/app/dashboard/organizations/actions";
 
 type EditCardPageProps = {
   params: Promise<{ cardId: string }>;
@@ -37,7 +38,7 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
     },
   });
   if (!card) notFound();
-  const templates = await prisma.template.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } });
+  const [templates, memberships] = await Promise.all([\n    prisma.template.findMany({ where: { isActive: true }, orderBy: { sortOrder: "asc" } }),\n    prisma.organizationMember.findMany({ where: { userId: session.user.id, role: { not: "VIEWER" } }, include: { organization: { select: { id: true, name: true } } }, orderBy: { joinedAt: "asc" } }),\n  ]);
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
   const protocol = (requestHeaders.get("x-forwarded-proto") || "https").split(",")[0].trim();
@@ -108,6 +109,23 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
               </div>
             ))}
           </div>
+        </div>
+
+        <div className={formStyles.section}>
+          <div className={formStyles.sectionHeading}>
+            <div><span className={formStyles.step}>COMPANY</span><h2>Organization</h2></div>
+          </div>
+          <p className={formStyles.helper}>Link this card to a company workspace so it appears in the employee directory.</p>
+          <form action={assignCardToOrganization} className={formStyles.addForm}>
+            <input type="hidden" name="cardId" value={card.id} />
+            <label>Organization
+              <select name="organizationId" defaultValue={card.organizationId || ""}>
+                <option value="">Personal card (not linked)</option>
+                {memberships.map((membership) => <option key={membership.organization.id} value={membership.organization.id}>{membership.organization.name}</option>)}
+              </select>
+            </label>
+            <button type="submit">Save organization</button>
+          </form>
         </div>
 
         <QRStudio
