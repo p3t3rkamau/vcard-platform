@@ -3,14 +3,12 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import styles from "./profile.module.scss";
-import { ensureDefaultTemplates } from "@/lib/templates";
 
 type PageProps = { params: Promise<{ slug: string }> };
 
 export const dynamic = "force-dynamic";
 
 async function getCard(slug: string) {
-  await ensureDefaultTemplates();
   return prisma.businessCard.findFirst({
     where: { slug, status: "PUBLISHED", deletedAt: null },
     include: {
