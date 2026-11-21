@@ -28,6 +28,8 @@ function backToEditor(request: Request, cardId: string, status: string, mediaTyp
   return NextResponse.redirect(url, 303);
 }
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request, { params }: RouteProps) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -102,10 +104,10 @@ export async function POST(request: Request, { params }: RouteProps) {
           sizeBytes: file.size,
         },
       });
-      await tx.businessCard.update({
-        where: { id: card.id },
-        data: { [MEDIA_FIELDS[mediaType]]: blob.url },
-      });
+      const cardImageUpdate = mediaType === "PROFILE_IMAGE"
+        ? { profileImageUrl: blob.url }
+        : mediaType === "COVER_IMAGE" ? { coverImageUrl: blob.url } : { companyLogoUrl: blob.url };
+      await tx.businessCard.update({ where: { id: card.id }, data: cardImageUpdate });
       if (oldMedia.length) {
         await tx.media.deleteMany({ where: { id: { in: oldMedia.map((item) => item.id) } } });
       }
