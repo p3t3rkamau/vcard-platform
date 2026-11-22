@@ -71,6 +71,12 @@ export async function POST(request: Request, { params }: RouteProps) {
   if (!isJpeg && !isPng && !isWebp) return backToEditor(request, cardId, "invalid-file", mediaType);
 
   const extension = ALLOWED_TYPES[file.type as keyof typeof ALLOWED_TYPES];
+  const blobToken = process.env.VCARD_BLOB_READ_WRITE_TOKEN;
+  if (!blobToken) {
+    console.error("[card-media-upload] VCARD_BLOB_READ_WRITE_TOKEN is not configured.");
+    return backToEditor(request, cardId, "not-configured", mediaType);
+  }
+
   const pathname = "vcard/" + session.user.id + "/" + card.id + "/" + mediaType.toLowerCase() + "." + extension;
   let uploadedUrl: string | null = null;
   let failureStage: "blob" | "database" = "blob";
@@ -78,6 +84,7 @@ export async function POST(request: Request, { params }: RouteProps) {
   try {
     const blob = await put(pathname, fileBytes, {
       access: "public",
+      token: blobToken,
       addRandomSuffix: true,
       contentType: file.type,
     });
