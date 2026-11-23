@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth, signOut } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isAdminEmail } from "@/lib/admin";
+import { appBaseUrl } from "@/lib/http";
 import {
   archiveBusinessCard,
   deleteBusinessCard,
@@ -41,7 +42,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const activeCards = cards.filter((card) => card.status !== "ARCHIVED");
   const publishedCards = cards.filter((card) => card.status === "PUBLISHED");
   const draftCards = cards.filter((card) => card.status === "DRAFT");
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "").replace(/\/$/, "");
+  const appUrl = appBaseUrl();
 
   return (
     <main className={styles.shell}>
