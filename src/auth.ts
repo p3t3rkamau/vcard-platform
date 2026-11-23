@@ -15,6 +15,8 @@ const credentialsSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // Vercel provides trusted forwarded host headers; use the request host for Auth.js URLs.
+  trustHost: true,
   adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
