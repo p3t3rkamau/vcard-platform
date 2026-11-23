@@ -32,7 +32,7 @@ The business card UUID is the stable record identity. Slugs are readable URL ide
 
 See `.env.example`. Never commit `.env` or expose server secrets through `NEXT_PUBLIC_*` variables.
 
-For Vercel production, set `NEXT_PUBLIC_APP_URL` to your real public HTTPS domain. Auth.js v5 detects the Vercel request hostname automatically, so do not set `AUTH_URL` or `NEXTAUTH_URL` to localhost in Vercel. `AUTH_URL` is only needed for a non-standard Auth.js base path.
+On Vercel, **leave `NEXT_PUBLIC_APP_URL` unset**: the app automatically uses Vercel's `VERCEL_PROJECT_PRODUCTION_URL` (your production domain, which updates itself when you add a custom domain) and `VERCEL_URL` for preview deployments. A localhost value is ignored on Vercel. Only set it to override with a specific domain. Auth.js v5 detects the Vercel request hostname automatically, so do not set `AUTH_URL` or `NEXTAUTH_URL` to localhost in Vercel. `AUTH_URL` is only needed for a non-standard Auth.js base path.
 
 ## Architecture principles
 
