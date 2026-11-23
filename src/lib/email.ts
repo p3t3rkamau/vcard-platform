@@ -58,7 +58,7 @@ export async function sendVerificationEmail(email: string, token: string) {
 
 export async function sendPasswordResetEmail(email: string, token: string) {
   const config = getSmtpConfig();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const appUrl = appBaseUrl();
   const link = new URL("/reset-password", appUrl);
   link.searchParams.set("token", token);
 
