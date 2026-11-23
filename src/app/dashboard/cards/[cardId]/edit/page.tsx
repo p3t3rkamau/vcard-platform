@@ -44,9 +44,22 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
     prisma.organizationMember.findMany({ where: { userId: session.user.id, role: { not: "VIEWER" } }, include: { organization: { select: { id: true, name: true } } }, orderBy: { joinedAt: "asc" } }),
   ]);
   const requestHeaders = await headers();
-  const host = requestHeaders.get("x-forwarded-host") || requestHeaders.get("host");
-  const protocol = (requestHeaders.get("x-forwarded-proto") || "https").split(",")[0].trim();
-  const appBaseUrl = (process.env.NEXT_PUBLIC_APP_URL || (host ? protocol + "://" + host : "http://localhost:3000")).replace(/\/$/, "");
+  const forwardedHost = requestHeaders.get("x-forwarded-host")?.split(",")[0]?.trim();
+  const requestHost = forwardedHost || requestHeaders.get("host")?.split(",")[0]?.trim();
+  const forwardedProtocol = requestHeaders.get("x-forwarded-proto")?.split(",")[0]?.trim();
+  const requestProtocol = forwardedProtocol || (requestHost?.startsWith("localhost") ? "http" : "https");
+  const requestOrigin = requestHost ? requestProtocol + "://" + requestHost : null;
+
+  // Ignore a localhost app URL when the request is coming from a deployed hostname.
+  const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  const configuredIsLocal = configuredAppUrl
+    ? /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(configuredAppUrl)
+    : false;
+  const appBaseUrl = (
+    configuredAppUrl && !configuredIsLocal
+      ? configuredAppUrl
+      : requestOrigin || configuredAppUrl || "http://localhost:3000"
+  ).replace(/\/$/, "");
 
   return (
     <main className={styles.shell}>
