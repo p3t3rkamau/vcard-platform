@@ -47,17 +47,18 @@ export function referrerDomainFromHeaders(headers: Headers) {
 }
 
 export function appBaseUrl() {
-  // On Vercel, always derive the canonical public origin from Vercel's
-  // current project domains. Do not let a stale NEXT_PUBLIC_APP_URL win.
+  // Vercel's project production domain is stable across deployments and previews.
+  // It prevents stale NEXT_PUBLIC_APP_URL values from leaking into public QR links.
   if (process.env.VERCEL) {
-    const productionHost = process.env.VERCEL_PROJECT_PRODUCTION_URL;
-    const deploymentHost = process.env.VERCEL_URL;
-    const host = process.env.VERCEL_ENV === "production"
-      ? productionHost || deploymentHost
-      : productionHost || deploymentHost;
-    if (host) return "https://" + host.replace(/^https?:\\/\\//, "").replace(/\\/$/, "");
+    const host =
+      process.env.VERCEL_PROJECT_PRODUCTION_URL ||
+      process.env.VERCEL_URL;
+    if (host) {
+      const normalizedHost = host.replace(/^https?:\/\//i, "").replace(/\/$/, "");
+      return "https://" + normalizedHost;
+    }
   }
 
   const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  return (configured || "http://localhost:3000").replace(/\\/$/, "");
+  return (configured || "http://localhost:3000").replace(/\/$/, "");
 }
