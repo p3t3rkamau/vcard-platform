@@ -47,5 +47,21 @@ export function referrerDomainFromHeaders(headers: Headers) {
 }
 
 export function appBaseUrl() {
-  return (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+  const configured = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  const configuredIsLocal = configured
+    ? /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/i.test(configured)
+    : false;
+
+  if (configured && !configuredIsLocal) return configured.replace(/\/$/, "");
+
+  // Never generate localhost links from a Vercel deployment. Prefer the stable
+  // production hostname for production and the active deployment hostname for previews.
+  if (process.env.VERCEL) {
+    const deploymentHost = process.env.VERCEL_ENV === "production"
+      ? process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL
+      : process.env.VERCEL_URL || process.env.VERCEL_PROJECT_PRODUCTION_URL;
+    if (deploymentHost) return "https://" + deploymentHost.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  }
+
+  return (configured || "http://localhost:3000").replace(/\/$/, "");
 }
