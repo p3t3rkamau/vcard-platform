@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.scss";
+import { appBaseUrl } from "@/lib/http";
 
-const siteUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+const siteUrl = appBaseUrl();
 
 export const metadata: Metadata = {
   // Without metadataBase, canonical and Open Graph URLs such as "/p/slug" resolve against the wrong host.
