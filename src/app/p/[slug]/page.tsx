@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { cache } from "react";
+import { notFound, permanentRedirect } from "next/navigation";
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { countryFromHeaders, dialableNumber, isBotUserAgent, referrerDomainFromHeaders, safeExternalUrl, whatsappLink } from "@/lib/http";
+import ContactIcon from "./ContactIcon";
 import styles from "./profile.module.scss";
 
 type PageProps = { params: Promise<{ slug: string }>; searchParams: Promise<{ source?: string; reported?: string }> };
 
 export const dynamic = "force-dynamic";
 
-async function getCard(slug: string) {
+// React cache(): generateMetadata and the page share one query per request.
+const getCard = cache(async function getCard(slug: string) {
   return prisma.businessCard.findFirst({
     where: { slug, status: "PUBLISHED", deletedAt: null },
     include: {
@@ -18,29 +23,7 @@ async function getCard(slug: string) {
       template: true,
     },
   });
-}
-
-function safeExternalUrl(value: string | null | undefined) {
-  if (!value) return null;
-  try {
-    const url = new URL(/^https?:\/\//i.test(value) ? value : "https://" + value);
-    return ["http:", "https:"].includes(url.protocol) ? url.toString() : null;
-  } catch {
-    return null;
-  }
-}
-
-function contactSymbol(type: string) {
-  const symbols: Record<string, string> = {
-    PHONE: "☎",
-    EMAIL: "✉",
-    WHATSAPP: "◉",
-    WEBSITE: "↗",
-    ADDRESS: "⌖",
-    OTHER: "•",
-  };
-  return symbols[type] || "•";
-}
+});
 
 function socialMark(platform: string) {
   const marks: Record<string, string> = {
@@ -64,7 +47,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     alternates: { canonical: "/p/" + card.slug },
     robots: { index: card.isSearchable, follow: true },
-    openGraph: { title: name, description, images: card.profileImageUrl ? [card.profileImageUrl] : [], type: "profile" },
+    openGraph: { title: name, description, url: "/p/" + card.slug, images: card.profileImageUrl ? [card.profileImageUrl] : [], type: "profile" },
+    twitter: { card: card.profileImageUrl ? "summary_large_image" : "summary", title: name, description },
   };
 }
 
@@ -74,7 +58,8 @@ export default async function PublicCardPage({ params, searchParams }: PageProps
 
   if (!card) {
     const oldSlug = await prisma.slugRedirect.findUnique({ where: { oldSlug: slug }, select: { newSlug: true } });
-    if (oldSlug) redirect("/p/" + oldSlug.newSlug);
+    // README promises a *permanent* redirect for retired slugs; keep ?source=qr so printed QR codes still count as scans.
+    if (oldSlug) permanentRedirect("/p/" + oldSlug.newSlug + (query.source === "qr" ? "?source=qr" : ""));
     notFound();
   }
 
@@ -87,19 +72,18 @@ export default async function PublicCardPage({ params, searchParams }: PageProps
   const templateClass = (card.template?.slug || "modern-corporate").replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
   const templateSlug = card.template?.slug || "modern-corporate";
   const requestHeaders = await headers();
-  const userAgent = requestHeaders.get("user-agent") || "";
-  const isBot = /bot|crawler|spider|preview|facebookexternalhit|slackbot/i.test(userAgent);
+  const userAgent = requestHeaders.get("user-agent");
 
-  if (!isBot) {
-    const referrer = requestHeaders.get("referer");
-    let referrerDomain: string | null = null;
-    try { referrerDomain = referrer ? new URL(referrer).hostname.slice(0, 190) : null; } catch { referrerDomain = null; }
-    const countryHeader = requestHeaders.get("x-vercel-ip-country");
-    const countryCode = countryHeader && /^[A-Z]{2}$/.test(countryHeader) ? countryHeader : null;
-    const eventTypes = query.source === "qr" ? ["PROFILE_VIEW", "QR_SCAN"] as const : ["PROFILE_VIEW"] as const;
-    await prisma.analyticsEvent.createMany({
-      data: eventTypes.map((eventType) => ({ businessCardId: card.id, eventType, countryCode, referrerDomain })),
-    }).catch(() => undefined);
+  if (!isBotUserAgent(userAgent)) {
+    const eventTypes = query.source === "qr" ? (["PROFILE_VIEW", "QR_SCAN"] as const) : (["PROFILE_VIEW"] as const);
+    const countryCode = countryFromHeaders(requestHeaders);
+    const referrerDomain = referrerDomainFromHeaders(requestHeaders);
+    // after(): the analytics write no longer delays the page the visitor is waiting for.
+    after(async () => {
+      await prisma.analyticsEvent
+        .createMany({ data: eventTypes.map((eventType) => ({ businessCardId: card.id, eventType, countryCode, referrerDomain })) })
+        .catch(() => undefined);
+    });
   }
 
   const cover = <div className={styles.cover} style={coverImage ? { backgroundImage: 'linear-gradient(120deg, rgba(18,31,70,.18), rgba(18,31,70,.48)), url("' + coverImage + '")' } : undefined} />;
@@ -131,22 +115,28 @@ export default async function PublicCardPage({ params, searchParams }: PageProps
       <h2><span className={styles.sectionMark} aria-hidden="true">✦</span> Contact details</h2>
       <div className={styles.contactList}>
         {card.contactMethods.map((method) => {
-          const href = method.type === "PHONE" || method.type === "WHATSAPP" ? "tel:" + method.value
-            : method.type === "EMAIL" ? "mailto:" + method.value
-            : method.type === "WEBSITE" ? safeExternalUrl(method.value) : null;
+          let link: React.ReactNode = <p>{method.value}</p>;
+          if (method.type === "PHONE" && dialableNumber(method.value)) {
+            link = <a href={"tel:" + dialableNumber(method.value)}>{method.value}</a>;
+          } else if (method.type === "WHATSAPP") {
+            const wa = whatsappLink(method.value);
+            link = wa ? <a href={wa} target="_blank" rel="noreferrer">{method.value}</a> : <p>{method.value}</p>;
+          } else if (method.type === "EMAIL") {
+            link = <a href={"mailto:" + method.value}>{method.value}</a>;
+          } else if (method.type === "WEBSITE" && safeExternalUrl(method.value)) {
+            link = <a href={"/api/cards/" + card.slug + "/links/" + method.id} target="_blank" rel="noreferrer">{method.value}</a>;
+          }
           return (
             <div className={styles.contactItem} key={method.id}>
-              <span className={styles.contactIcon} aria-hidden="true">{contactSymbol(method.type)}</span>
+              <span className={styles.contactIcon}><ContactIcon type={method.type} /></span>
               <div className={styles.contactText}>
                 <span>{method.label || method.type.toLowerCase()}</span>
-                {href && href.startsWith("http")
-                  ? <a href={"/api/cards/" + card.slug + "/links/" + method.id} target="_blank" rel="noreferrer">{method.value}</a>
-                  : href ? <a href={href}>{method.value}</a> : <p>{method.value}</p>}
+                {link}
               </div>
             </div>
           );
         })}
-        {card.address && <div className={styles.contactItem}><span className={styles.contactIcon} aria-hidden="true">⌖</span><div className={styles.contactText}><span>Address</span><p>{[card.address, card.city, card.region, card.country].filter(Boolean).join(", ")}</p></div></div>}
+        {card.address && <div className={styles.contactItem}><span className={styles.contactIcon}><ContactIcon type="ADDRESS" /></span><div className={styles.contactText}><span>Address</span><p>{[card.address, card.city, card.region, card.country].filter(Boolean).join(", ")}</p></div></div>}
       </div>
     </section>
   ) : null;
@@ -180,8 +170,19 @@ export default async function PublicCardPage({ params, searchParams }: PageProps
     </>
   );
 
+  const jsonLd = card.isSearchable ? {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name,
+    ...(card.jobTitle ? { jobTitle: card.jobTitle } : {}),
+    ...(card.companyName ? { worksFor: { "@type": "Organization", name: card.companyName } } : {}),
+    ...(profileImage ? { image: profileImage } : {}),
+    ...(website ? { url: website } : {}),
+  } : null;
+
   return (
     <main className={styles.page}>
+      {jsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />}
       <article className={styles.profile + " " + (styles[templateClass as keyof typeof styles] || "")}>
         {templateSlug === "minimal-professional" ? (
           <><div className={styles.minimalHeader}><span className={styles.minimalRule} />{identity}</div>{actions}{contactSection}{socialSection}</>

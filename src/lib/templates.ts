@@ -14,6 +14,13 @@ export type CardTemplateSlug = (typeof CARD_TEMPLATES)[number]["slug"];
 export async function ensureDefaultTemplates() {
   const { prisma } = await import("@/lib/prisma");
 
+  // This ran 8 upserts (8 writes) on every edit-page view. One cheap count avoids that
+  // once the templates exist.
+  const existing = await prisma.template.count({
+    where: { slug: { in: CARD_TEMPLATES.map((template) => template.slug) }, isActive: true },
+  });
+  if (existing >= CARD_TEMPLATES.length) return;
+
   await Promise.all(CARD_TEMPLATES.map((template) =>
     prisma.template.upsert({
       where: { slug: template.slug },

@@ -1,4 +1,5 @@
 import { del, put } from "@vercel/blob";
+import sharp from "sharp";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -20,6 +21,25 @@ const MEDIA_FIELDS = {
 } as const;
 
 type UploadMediaType = keyof typeof MEDIA_FIELDS;
+
+// Images are resized and re-encoded server-side. This (1) strips EXIF metadata such as GPS
+// coordinates from photos on public profiles, (2) stops 4 MB phone photos being served into
+// a 96px avatar, and (3) rejects files that only *look* like images.
+const IMAGE_PROFILES: Record<UploadMediaType, { width: number; height: number; fit: "cover" | "inside" }> = {
+  PROFILE_IMAGE: { width: 640, height: 640, fit: "cover" },
+  COVER_IMAGE: { width: 1600, height: 900, fit: "inside" },
+  COMPANY_LOGO: { width: 600, height: 600, fit: "inside" },
+};
+
+async function processImage(input: Buffer, mediaType: UploadMediaType) {
+  const profile = IMAGE_PROFILES[mediaType];
+  const { data, info } = await sharp(input, { limitInputPixels: 40_000_000, failOn: "error" })
+    .rotate() // apply EXIF orientation before the metadata is dropped
+    .resize({ width: profile.width, height: profile.height, fit: profile.fit, withoutEnlargement: profile.fit === "inside" })
+    .webp({ quality: 82 })
+    .toBuffer({ resolveWithObject: true });
+  return { data, width: info.width, height: info.height };
+}
 
 function backToEditor(request: Request, cardId: string, status: string, mediaType?: string) {
   const url = new URL("/dashboard/cards/" + cardId + "/edit", request.url);
@@ -70,23 +90,29 @@ export async function POST(request: Request, { params }: RouteProps) {
   const isWebp = file.type === "image/webp" && fileBytes.toString("ascii", 0, 4) === "RIFF" && fileBytes.toString("ascii", 8, 12) === "WEBP";
   if (!isJpeg && !isPng && !isWebp) return backToEditor(request, cardId, "invalid-file", mediaType);
 
-  const extension = ALLOWED_TYPES[file.type as keyof typeof ALLOWED_TYPES];
+  let processed: Awaited<ReturnType<typeof processImage>>;
+  try {
+    processed = await processImage(fileBytes, mediaType);
+  } catch {
+    return backToEditor(request, cardId, "invalid-file", mediaType);
+  }
+
   const blobToken = process.env.VCARD_BLOB_READ_WRITE_TOKEN;
   if (!blobToken) {
     console.error("[card-media-upload] VCARD_BLOB_READ_WRITE_TOKEN is not configured.");
     return backToEditor(request, cardId, "not-configured", mediaType);
   }
 
-  const pathname = "vcard/" + session.user.id + "/" + card.id + "/" + mediaType.toLowerCase() + "." + extension;
+  const pathname = "vcard/" + session.user.id + "/" + card.id + "/" + mediaType.toLowerCase() + ".webp";
   let uploadedUrl: string | null = null;
   let failureStage: "blob" | "database" = "blob";
 
   try {
-    const blob = await put(pathname, fileBytes, {
+    const blob = await put(pathname, processed.data, {
       access: "public",
       token: blobToken,
       addRandomSuffix: true,
-      contentType: file.type,
+      contentType: "image/webp",
     });
     uploadedUrl = blob.url;
     failureStage = "database";
@@ -105,8 +131,10 @@ export async function POST(request: Request, { params }: RouteProps) {
           publicUrl: blob.url,
           blobPath: blob.pathname,
           fileName: file.name.slice(0, 180),
-          mimeType: file.type,
-          sizeBytes: file.size,
+          mimeType: "image/webp",
+          sizeBytes: processed.data.length,
+          width: processed.width,
+          height: processed.height,
         },
       });
       const cardImageUpdate = mediaType === "PROFILE_IMAGE"

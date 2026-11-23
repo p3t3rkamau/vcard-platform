@@ -1,15 +1,20 @@
 import { createHash } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 
+/**
+ * Fixed-window rate limiter backed by Postgres.
+ * Accepts a Request (route handlers) or Headers (server actions, via `await headers()`).
+ */
 export async function checkRateLimit(
-  request: Request,
+  source: Request | Headers,
   namespace: string,
   limit: number,
   windowMs: number,
   identity = "",
 ) {
-  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const address = forwarded || request.headers.get("x-real-ip") || "local";
+  const requestHeaders = source instanceof Headers ? source : source.headers;
+  const forwarded = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim();
+  const address = forwarded || requestHeaders.get("x-real-ip") || "local";
   const key = createHash("sha256").update(namespace + ":" + address + ":" + identity).digest("hex");
   const now = new Date();
   const expiresAt = new Date(now.getTime() + windowMs);
@@ -32,6 +37,14 @@ export async function checkRateLimit(
       END
     RETURNING "count"
   `;
+
+  // Expired buckets were never deleted, so the table grew forever. Clean up
+  // opportunistically (about 1% of calls) instead of requiring a cron job.
+  if (Math.random() < 0.01) {
+    void prisma.rateLimitBucket
+      .deleteMany({ where: { expiresAt: { lt: new Date(now.getTime() - 60 * 60 * 1000) } } })
+      .catch(() => undefined);
+  }
 
   return (rows[0]?.count ?? limit + 1) <= limit;
 }

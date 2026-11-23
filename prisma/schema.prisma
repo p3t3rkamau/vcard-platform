@@ -62,16 +62,16 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts               Account[]
-  sessions               Session[]
-  ownedCards             BusinessCard[]       @relation("CardOwner")
+  accounts                Account[]
+  sessions                Session[]
+  ownedCards              BusinessCard[]           @relation("CardOwner")
   organizationMemberships OrganizationMember[]
-  createdOrganizations   Organization[]       @relation("OrganizationCreator")
-  media                  Media[]
+  createdOrganizations    Organization[]           @relation("OrganizationCreator")
+  media                   Media[]
   emailVerificationTokens EmailVerificationToken[]
   passwordResetTokens     PasswordResetToken[]
-  submittedReports        ProfileReport[] @relation("ReportReporter")
-  reviewedReports         ProfileReport[] @relation("ReportReviewer")
+  submittedReports        ProfileReport[]          @relation("ReportReporter")
+  reviewedReports         ProfileReport[]          @relation("ReportReviewer")
 
   @@map("users")
 }
@@ -186,7 +186,7 @@ model BusinessCard {
   displayName     String?
   jobTitle        String?
   companyName     String?
-  bio             String?   @db.Text
+  bio             String? @db.Text
   profileImageUrl String?
   coverImageUrl   String?
   companyLogoUrl  String?
@@ -197,10 +197,10 @@ model BusinessCard {
   country         String?
   workingHours    Json?
 
-  isSearchable Boolean  @default(true)
+  isSearchable Boolean   @default(true)
   publishedAt  DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
 
   owner          User             @relation("CardOwner", fields: [ownerId], references: [id], onDelete: Restrict)
@@ -358,7 +358,6 @@ model PasswordResetToken {
   @@map("password_reset_tokens")
 }
 
-
 model ProfileReport {
   id             String       @id @default(cuid())
   businessCardId String
@@ -379,7 +378,6 @@ model ProfileReport {
   @@index([reporterUserId])
   @@map("profile_reports")
 }
-
 
 model RateLimitBucket {
   key             String   @id

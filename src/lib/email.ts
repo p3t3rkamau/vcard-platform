@@ -69,3 +69,16 @@ export async function sendPasswordResetEmail(email: string, token: string) {
     html: `<p>A password reset was requested for your account.</p><p><a href="${link.toString()}">Reset your password</a></p><p>This link expires in 30 minutes. If you did not request this, ignore this email.</p>`,
   });
 }
+
+export async function sendAccountExistsEmail(email: string) {
+  const config = getSmtpConfig();
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+
+  await createTransporter(config).sendMail({
+    from: config.from,
+    to: email,
+    subject: "You already have a vCard Platform account",
+    text: `Someone tried to create an account with this email address, but you already have one.\nSign in: ${appUrl}/login\nForgot your password? ${appUrl}/forgot-password\nIf this wasn't you, you can ignore this email.`,
+    html: `<p>Someone tried to create an account with this email address, but you already have one.</p><p><a href="${appUrl}/login">Sign in</a> or <a href="${appUrl}/forgot-password">reset your password</a>.</p><p>If this wasn't you, you can ignore this email.</p>`,
+  });
+}

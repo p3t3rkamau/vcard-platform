@@ -1,53 +1,45 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { countryFromHeaders, isBotUserAgent, referrerDomainFromHeaders, safeExternalUrl } from "@/lib/http";
 
 type RouteProps = { params: Promise<{ cardId: string; linkId: string }> };
 
-function safeUrl(value: string) {
-  try {
-    const url = new URL(/^https?:\/\//i.test(value) ? value : "https://" + value);
-    return ["http:", "https:"].includes(url.protocol) ? url.toString() : null;
-  } catch { return null; }
-}
-
+// NOTE: despite the folder name, `cardId` is the public *slug*.
 export async function GET(request: Request, { params }: RouteProps) {
   const { cardId: slug, linkId } = await params;
   const card = await prisma.businessCard.findFirst({
     where: { slug, status: "PUBLISHED", deletedAt: null },
-    select: { id: true },
+    select: { id: true, website: true },
   });
   if (!card) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
 
+  let destination: string | null = null;
+  let eventType: "WEBSITE_CLICK" | "SOCIAL_CLICK" = "WEBSITE_CLICK";
+
   if (linkId === "website") {
-    const cardWebsite = await prisma.businessCard.findFirst({ where: { id: card.id }, select: { website: true } });
-    const destination = cardWebsite?.website ? safeUrl(cardWebsite.website) : null;
-    if (!destination) return NextResponse.json({ error: "Link not found" }, { status: 404 });
-    const userAgent = request.headers.get("user-agent") || "";
-    if (!/bot|crawler|spider|preview/i.test(userAgent)) {
-      const countryHeader = request.headers.get("x-vercel-ip-country");
-      const countryCode = countryHeader && /^[A-Z]{2}$/.test(countryHeader) ? countryHeader : null;
-      await prisma.analyticsEvent.create({ data: { businessCardId: card.id, eventType: "WEBSITE_CLICK", countryCode } }).catch(() => undefined);
-    }
-    return NextResponse.redirect(destination, 302);
+    destination = safeExternalUrl(card.website);
+  } else {
+    const [contact, social] = await Promise.all([
+      prisma.contactMethod.findFirst({ where: { id: linkId, businessCardId: card.id, isVisible: true, type: "WEBSITE" }, select: { value: true } }),
+      prisma.socialLink.findFirst({ where: { id: linkId, businessCardId: card.id, isVisible: true }, select: { url: true } }),
+    ]);
+    destination = safeExternalUrl(contact?.value ?? social?.url);
+    if (!contact && social) eventType = "SOCIAL_CLICK";
   }
 
-  const [contact, social] = await Promise.all([
-    prisma.contactMethod.findFirst({ where: { id: linkId, businessCardId: card.id, isVisible: true, type: "WEBSITE" }, select: { value: true } }),
-    prisma.socialLink.findFirst({ where: { id: linkId, businessCardId: card.id, isVisible: true }, select: { url: true } }),
-  ]);
-  const destination = contact ? safeUrl(contact.value) : social ? safeUrl(social.url) : null;
   if (!destination) return NextResponse.json({ error: "Link not found" }, { status: 404 });
 
-  const userAgent = request.headers.get("user-agent") || "";
-  if (!/bot|crawler|spider|preview/i.test(userAgent)) {
-    const countryHeader = request.headers.get("x-vercel-ip-country");
-    const countryCode = countryHeader && /^[A-Z]{2}$/.test(countryHeader) ? countryHeader : null;
-    const referrer = request.headers.get("referer");
-    let referrerDomain: string | null = null;
-    try { referrerDomain = referrer ? new URL(referrer).hostname.slice(0, 190) : null; } catch { referrerDomain = null; }
-    await prisma.analyticsEvent.create({
-      data: { businessCardId: card.id, eventType: contact ? "WEBSITE_CLICK" : "SOCIAL_CLICK", countryCode, referrerDomain },
-    }).catch(() => undefined);
+  if (!isBotUserAgent(request.headers.get("user-agent"))) {
+    await prisma.analyticsEvent
+      .create({
+        data: {
+          businessCardId: card.id,
+          eventType,
+          countryCode: countryFromHeaders(request.headers),
+          referrerDomain: referrerDomainFromHeaders(request.headers),
+        },
+      })
+      .catch(() => undefined);
   }
 
   return NextResponse.redirect(destination, 302);

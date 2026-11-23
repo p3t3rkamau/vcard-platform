@@ -68,6 +68,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       {query.updated === "1" && <p className={styles.notice}>Your card details have been saved.</p>}
       {query.error === "invalid" && <p className={styles.notice}>Please check the details and try again.</p>}
+      {query.error === "limit" && <p className={styles.notice}>You have reached the card limit or are creating cards too quickly. Archive or delete a card, or try again later.</p>}
+      {query.error === "not-found" && <p className={styles.notice}>That card could not be found.</p>}
       {query.error === "publish" && <p className={styles.notice}>Add a display name before publishing your card.</p>}
 
       <section className={styles.stats} aria-label="Card statistics">

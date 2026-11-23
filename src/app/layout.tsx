@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.scss";
 
+const siteUrl = (process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(/\/$/, "");
+
 export const metadata: Metadata = {
+  // Without metadataBase, canonical and Open Graph URLs such as "/p/slug" resolve against the wrong host.
+  metadataBase: new URL(siteUrl),
   title: {
     default: "vCard Platform — Your digital business card",
     template: "%s | vCard Platform",
@@ -9,6 +13,12 @@ export const metadata: Metadata = {
   description:
     "Create a professional digital business card and share it instantly with a QR code.",
   applicationName: "vCard Platform",
+  openGraph: {
+    siteName: "vCard Platform",
+    title: "vCard Platform — Your digital business card",
+    description: "Create a professional digital business card and share it instantly with a QR code.",
+    type: "website",
+  },
   robots: {
     index: true,
     follow: true,

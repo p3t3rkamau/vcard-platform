@@ -9,6 +9,7 @@ import {
   removeContactMethod,
   removeSocialLink,
   updateBusinessCardDetails,
+  updateCardSlug,
   updateCardTemplate,
 } from "../../../actions";
 import styles from "../../../dashboard.module.scss";
@@ -19,7 +20,7 @@ import { assignCardToOrganization } from "@/app/dashboard/organizations/actions"
 
 type EditCardPageProps = {
   params: Promise<{ cardId: string }>;
-  searchParams: Promise<{ created?: string; duplicated?: string; contact?: string; social?: string; template?: string; media?: string; mediaType?: string; reason?: string; organization?: string; error?: string }>;
+  searchParams: Promise<{ created?: string; duplicated?: string; contact?: string; social?: string; template?: string; media?: string; mediaType?: string; reason?: string; organization?: string; slug?: string; error?: string }>;
 };
 
 export default async function EditCardPage({ params, searchParams }: EditCardPageProps) {
@@ -55,8 +56,8 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
         <span className={formStyles.eyebrow}>CARD BUILDER · STEP 1</span>
         <h1>{card.displayName || "Your digital card"}</h1>
         <p className={formStyles.intro}>
-          Your profile address is permanent: <strong>/p/{card.slug}</strong>.
-          Updating your details will not change this address.
+          Your profile address is <strong>/p/{card.slug}</strong>. Updating your details will not change it,
+          and if you ever choose a new address, your old link and printed QR codes keep working.
         </p>
 
         {query.created === "1" && <p className={formStyles.success}>Your digital card has been created.</p>}
@@ -73,7 +74,13 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
         {query.media === "rate-limited" && <p className={formStyles.error}>You have uploaded too many images recently. Please try again later.</p>}
         {query.organization === "updated" && <p className={formStyles.success}>Organization assignment updated.</p>}
         {query.error === "organization" && <p className={formStyles.error}>You do not have permission to link this card to that organization.</p>}
-        {query.error && <p className={formStyles.error}>Please check the information and try again.</p>}
+        {query.slug === "updated" && <p className={formStyles.success}>Your profile address has been updated. The old address redirects here.</p>}
+        {query.error === "slug" && <p className={formStyles.error}>Use at least 3 letters or numbers for your address.</p>}
+        {query.error === "slug-taken" && <p className={formStyles.error}>That address is already taken. Try another one.</p>}
+        {query.error === "slug-limit" && <p className={formStyles.error}>You can change your address up to 5 times per day. Please try again tomorrow.</p>}
+        {query.error === "website" && <p className={formStyles.error}>Enter a valid website address, such as example.com.</p>}
+        {query.error === "limit" && <p className={formStyles.error}>You have reached the limit for this card. Remove something before adding more.</p>}
+        {query.error && !["organization", "slug", "slug-taken", "slug-limit", "website", "limit"].includes(query.error) && <p className={formStyles.error}>Please check the information and try again.</p>}
 
         <div className={formStyles.section}>
           <div className={formStyles.sectionHeading}>
@@ -98,7 +105,7 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
         <div className={formStyles.section}>
           <div className={formStyles.sectionHeading}>
             <div><span className={formStyles.step}>BRANDING</span><h2>Profile images</h2></div>
-            <span className={formStyles.count}>JPG · PNG · WebP · 4 MB max</span>
+            <span className={formStyles.count}>JPG · PNG · WebP · 4 MB max · auto-optimized</span>
           </div>
           <div className={formStyles.mediaGrid}>
             {([
@@ -108,7 +115,7 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
             ] as const).map((item) => (
               <div className={formStyles.mediaCard} key={item.type}>
                 <strong>{item.label}</strong>
-                {item.url ? <img src={item.url} alt={item.label} /> : <div className={formStyles.mediaPlaceholder}>No image uploaded</div>}
+                {item.url ? <img src={item.url} alt={item.label} loading="lazy" /> : <div className={formStyles.mediaPlaceholder}>No image uploaded</div>}
                 <form action={"/api/cards/" + card.id + "/media"} method="post" encType="multipart/form-data">
                   <input type="hidden" name="type" value={item.type} />
                   <input type="file" name="file" accept="image/jpeg,image/png,image/webp" required />
@@ -155,6 +162,23 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
           }}
         />
 
+        <div className={formStyles.section}>
+          <div className={formStyles.sectionHeading}>
+            <div><span className={formStyles.step}>ADDRESS</span><h2>Profile address</h2></div>
+          </div>
+          <p className={formStyles.helper}>Your old address will keep redirecting here, so shared links and printed QR codes never break.</p>
+          <form action={updateCardSlug} className={formStyles.addForm}>
+            <input type="hidden" name="cardId" value={card.id} />
+            <label>Address
+              <span className={formStyles.slugRow}>
+                <span>{appBaseUrl.replace(/^https?:\/\//, "")}/p/</span>
+                <input name="slug" required minLength={3} maxLength={60} defaultValue={card.slug} autoCapitalize="none" spellCheck={false} />
+              </span>
+            </label>
+            <button type="submit">Update address</button>
+          </form>
+        </div>
+
         <form action={updateBusinessCardDetails} className={formStyles.form}>
           <input type="hidden" name="cardId" value={card.id} />
           <label>
@@ -172,6 +196,25 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
           <label>
             Short bio
             <textarea name="bio" maxLength={500} rows={4} defaultValue={card.bio ?? ""} placeholder="A short introduction about what you do." />
+          </label>
+          <label>
+            Website
+            <input name="website" maxLength={300} defaultValue={card.website ?? ""} placeholder="example.com" inputMode="url" autoComplete="url" />
+          </label>
+          <label>
+            Street address
+            <input name="address" maxLength={200} defaultValue={card.address ?? ""} autoComplete="street-address" />
+          </label>
+          <div className={formStyles.twoCol}>
+            <label>City<input name="city" maxLength={80} defaultValue={card.city ?? ""} autoComplete="address-level2" /></label>
+            <label>Region / county<input name="region" maxLength={80} defaultValue={card.region ?? ""} autoComplete="address-level1" /></label>
+            <label>Country<input name="country" maxLength={80} defaultValue={card.country ?? ""} autoComplete="country-name" /></label>
+          </div>
+          <label className={formStyles.checkRow}>
+            <input type="checkbox" name="isSearchable" defaultChecked={card.isSearchable} />
+            <b>Allow search engines to list this card
+              <small>When off, Google and others are asked not to index your page. Anyone with your link or QR code can still open it.</small>
+            </b>
           </label>
           <p className={formStyles.helper}>Current status: {card.status.toLowerCase()}.</p>
           <button type="submit">Save profile details <span aria-hidden="true">→</span></button>

@@ -42,6 +42,17 @@ See `.env.example`. Never commit `.env` or expose server secrets through `NEXT_P
 - All writes require server-side validation and authorization.
 
 
+## Profile addresses and redirects
+
+Owners can change a card's address from the card builder. The previous address is stored in `SlugRedirect` and permanently (308) redirects to the new one, so shared links and printed QR codes keep working. Retired slugs cannot be claimed by other cards.
+
+## Operations
+
+- `GET /api/health/db` reports database connectivity only (no counts).
+- Rate-limit buckets are pruned opportunistically; no cron job is required.
+- Analytics events accumulate indefinitely. Consider a periodic retention job (for example, delete events older than 24 months) as traffic grows.
+- CI (`.github/workflows/ci.yml`) runs typecheck, lint and a production build on every push and pull request.
+
 ## Feature setup
 
 ### Local account registration without SMTP
@@ -59,9 +70,9 @@ This lets you register and sign in locally before configuring an email provider.
 1. Open your Vercel project and go to **Storage**.
 2. Create a **Blob** store and connect it to this project.
 3. Enable the store for the environments you use.
-4. Ensure `BLOB_READ_WRITE_TOKEN` is present in local `.env` and Vercel Environment Variables.
+4. Ensure `VCARD_BLOB_READ_WRITE_TOKEN` (the token of the **public** store) is present in local `.env` and Vercel Environment Variables.
 
-Profile photos, cover images and company logos accept JPG, PNG and WebP files up to 4 MB.
+Profile photos, cover images and company logos accept JPG, PNG and WebP files up to 4 MB. Uploads are resized and re-encoded to WebP on the server, which also strips EXIF metadata (such as GPS location) from photos.
 
 ### Platform administrator
 

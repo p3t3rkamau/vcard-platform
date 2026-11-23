@@ -11,6 +11,7 @@ type AuthMode = "login" | "register" | "forgot" | "reset";
 type Props = {
   mode: AuthMode;
   token?: string;
+  notice?: { text: string; tone: "success" | "error" };
 };
 
 const copy: Record<AuthMode, { title: string; description: string; button: string }> = {
@@ -36,7 +37,7 @@ const copy: Record<AuthMode, { title: string; description: string; button: strin
   },
 };
 
-export default function AuthForm({ mode, token }: Props) {
+export default function AuthForm({ mode, token, notice }: Props) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -137,6 +138,9 @@ export default function AuthForm({ mode, token }: Props) {
             </label>
           )}
 
+          {notice && !message && !error && (
+            <p className={notice.tone === "success" ? styles.message : styles.error} role={notice.tone === "success" ? "status" : "alert"}>{notice.text}</p>
+          )}
           {message && <p className={styles.message} role="status">{message}</p>}
           {error && <p className={styles.error} role="alert">{error}</p>}
 
