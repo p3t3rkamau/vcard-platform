@@ -97,9 +97,9 @@ export async function POST(request: Request, { params }: RouteProps) {
     return backToEditor(request, cardId, "invalid-file", mediaType);
   }
 
-  const blobToken = process.env.VCARD_BLOB_READ_WRITE_TOKEN;
+  const blobToken = process.env.VC_BLOB_READ_WRITE_TOKEN;
   if (!blobToken) {
-    console.error("[card-media-upload] VCARD_BLOB_READ_WRITE_TOKEN is not configured.");
+    console.error("[card-media-upload] VC_BLOB_READ_WRITE_TOKEN is not configured.");
     return backToEditor(request, cardId, "not-configured", mediaType);
   }
 

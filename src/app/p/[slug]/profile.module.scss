@@ -1,353 +1,668 @@
+/*
+  Profile themes.
+  Shared components are styled ONCE from design tokens (custom properties). Each theme below sets
+  its tokens and only adds CSS for what is unique to it. To add a theme: copy a block, change tokens.
+  Fonts use system stacks so nothing is downloaded; "Poppins"/"Playfair Display" are used if installed.
+*/
+
 .page {
+  /* ---- default tokens ---- */
+  --sans: "Poppins", "Montserrat", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --serif: "Playfair Display", "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --display: var(--sans);
+  --page-bg: #eef2f6;
+  --card-bg: #fff;
+  --card-radius: 34px;
+  --card-shadow: 0 30px 80px rgba(16, 24, 40, 0.16);
+  --ink: #14201a;
+  --muted: #5d6b64;
+  --accent: #0e4a2b;
+  --align: center;
+  --justify: center;
+  --cover-h: 150px;
+  --cover-bg: linear-gradient(130deg, #0e4a2b, #2f7a4d);
+  --cover-pos: center;
+  --cover-overlay: none;
+  --avatar: 112px;
+  --avatar-radius: 50%;
+  --avatar-inner: 50%;
+  --ring: 4px;
+  --ring-bg: #fff;
+  --gap: 0px;
+  --gap-color: #fff;
+  --ml: auto;
+  --mr: auto;
+  --name-size: 30px;
+  --name-track: -0.02em;
+  --first-weight: 500;
+  --last-weight: 800;
+  --first-color: var(--ink);
+  --last-color: var(--accent);
+  --tile: 50px;
+  --tile-radius: 50%;
+  --tile-bg: transparent;
+  --tile-ink: var(--accent);
+  --tile-border: 1.5px solid var(--accent);
+  --pill-radius: 999px;
+  --p1-bg: var(--accent);
+  --p1-ink: #fff;
+  --p2-bg: transparent;
+  --p2-ink: var(--accent);
+  --p2-border: var(--accent);
+  --sheet-bg: #fff;
+  --sheet-ink: var(--ink);
+  --sheet-muted: #667085;
+  --icon-bg: #eef2f6;
+  --icon-ink: var(--accent);
+  --icon-radius: 50%;
+  --row-ink: var(--ink);
+  --row-muted: #7a869f;
+  --row-line: #e8ebf2;
+  --save-bg: var(--accent);
+  --save-ink: #fff;
+  --save-radius: 16px;
+
   display: flex;
   min-height: 100svh;
   justify-content: center;
-  padding: 34px 16px;
-  background: radial-gradient(circle at 50% 0%, #e9edff 0, #f5f7fb 430px);
+  padding: 28px 14px;
+  background: var(--page-bg);
+  color: var(--ink);
+  font-family: var(--sans);
 }
+
+/* ---------------- shared components ---------------- */
 .profile {
-  width: min(100%, 500px);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 440px);
   align-self: flex-start;
   overflow: hidden;
-  border: 1px solid #e7eaf1;
-  border-radius: 23px;
-  background: #fff;
-  box-shadow: 0 22px 70px rgba(23, 35, 75, .09);
+  border-radius: var(--card-radius);
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
 }
+.header { position: relative; }
 .cover {
-  height: 150px;
-  background: linear-gradient(130deg, #172b65, #4164d8 58%, #9aaaf0);
-  background-position: center;
+  position: relative;
+  height: var(--cover-h);
+  background-color: transparent;
+  background-image: var(--cover-bg);
+  background-position: var(--cover-pos);
+  background-repeat: no-repeat;
   background-size: cover;
+  mask-image: var(--cover-mask, none);
+  -webkit-mask-image: var(--cover-mask, none);
+  &::before { content: ""; position: absolute; inset: 0; background: var(--cover-overlay); }
 }
-.identity {
-  padding: 0 28px;
-  text-align: center;
-  h1 { margin: 13px 0 5px; color: #182230; font-size: 27px; letter-spacing: -.04em; }
+.heroInitials { position: absolute; inset: 0; display: grid; place-items: center; color: rgba(255, 255, 255, 0.85); font-size: 72px; font-weight: 800; letter-spacing: 0.04em; }
+.logo {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 4;
+  width: auto;
+  max-width: 100px;
+  max-height: 38px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+  object-fit: contain;
 }
-.avatar {
+.avatarWrap {
+  position: relative;
+  z-index: 2;
+  width: var(--avatar);
+  height: var(--avatar);
+  margin: var(--avatar-mt, calc(var(--avatar) * -0.5)) var(--mr) 0 var(--ml);
+  padding: var(--ring);
+  border-radius: var(--avatar-radius);
+  background: var(--ring-bg);
+  box-shadow: var(--avatar-shadow, none);
+}
+.avatar, .avatarFallback {
   display: block;
-  width: 112px;
-  height: 112px;
-  margin: -57px auto 0;
-  border: 5px solid #fff;
-  border-radius: 50%;
-  background: #eef1ff;
+  width: 100%;
+  height: 100%;
+  border: var(--gap) solid var(--gap-color);
+  border-radius: var(--avatar-inner);
+  background: #e8edf3;
   object-fit: cover;
 }
-.avatarFallback {
-  display: grid;
-  width: 112px;
-  height: 112px;
-  place-items: center;
-  margin: -57px auto 0;
-  border: 5px solid #fff;
-  border-radius: 50%;
-  background: #e8edff;
-  color: #3157d5;
-  font-size: 30px;
-  font-weight: 800;
+.avatarFallback { display: grid; place-items: center; color: var(--accent); font-size: 34px; font-weight: 800; }
+
+.body { position: relative; padding: 0 26px; }
+.identity { padding-top: 18px; text-align: var(--align); }
+.name {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--name-size);
+  letter-spacing: var(--name-track);
+  line-height: 1.12;
+  text-transform: var(--name-case, none);
+  overflow-wrap: anywhere;
 }
-.role { margin: 0; color: #526079; font-size: 14px; }
-.bio { margin: 15px auto 0; color: #667085; font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
-.actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 24px 22px 26px; }
-.saveButton, .secondaryButton {
-  display: inline-flex;
-  min-height: 45px;
-  align-items: center;
-  justify-content: center;
-  padding: 0 17px;
-  border: 1px solid #3157d5;
-  border-radius: 10px;
-  background: #3157d5;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 750;
-  text-decoration: none;
+.nameFirst { display: var(--name-break, inline); color: var(--first-color); font-weight: var(--first-weight); }
+.nameLast { display: var(--name-break, inline); color: var(--last-color); font-weight: var(--last-weight); letter-spacing: var(--last-track, inherit); }
+.role { margin: 9px 0 0; color: var(--muted); font-size: 15px; font-weight: 500; line-height: 1.4; }
+.rule { display: var(--rule-display, none); width: 36px; height: 3px; margin: 16px var(--rule-mx, 0) 0; background: var(--accent); }
+.quote {
+  display: var(--quote-display, flex);
+  gap: 10px;
+  margin: 18px 0 0;
+  color: var(--quote-ink, var(--ink));
+  font-size: 15px;
+  font-style: var(--quote-style, normal);
+  line-height: 1.6;
+  text-align: var(--align);
+  &::before { content: "\201C"; display: var(--quote-mark, block); flex: none; margin-right: var(--quote-mark-gap, 0); color: var(--accent); font: 700 40px/0.9 Georgia, serif; }
+  p { display: var(--quote-p, block); margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 }
-.secondaryButton { border-color: #e0e5ef; background: #fff; color: #344054; }
-.section {
-  padding: 22px 28px;
-  border-top: 1px solid #eef0f5;
-  h2 { margin: 0 0 15px; color: #344054; font-size: 13px; letter-spacing: .02em; }
-}
-.contactList { display: grid; gap: 14px; }
-.contactItem {
-  display: grid;
-  gap: 4px;
-  span { color: #98a2b3; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
-  a, p { overflow-wrap: anywhere; margin: 0; color: #243b83; font-size: 14px; text-decoration: none; }
-  p { color: #475467; }
-}
+
 .socials {
   display: flex;
   flex-wrap: wrap;
-  gap: 9px;
-  a { display: inline-flex; min-height: 35px; align-items: center; padding: 0 12px; border: 1px solid #e5e9f2; border-radius: 999px; color: #344054; font-size: 12px; text-decoration: none; }
+  justify-content: var(--justify);
+  gap: 12px;
+  margin-top: 22px;
+  padding: var(--soc-pad, 0);
+  border: var(--soc-border, 0);
+  border-radius: var(--soc-radius, 0);
+  background: var(--soc-bg, none);
 }
-.footer {
-  padding: 18px;
-  border-top: 1px solid #eef0f5;
-  color: #98a2b3;
-  font-size: 11px;
-  text-align: center;
-  a { color: #3157d5; text-decoration: none; }
-}
-@media (max-width: 520px) {
-  .page { padding: 0; background: #fff; }
-  .profile { min-height: 100svh; border: 0; border-radius: 0; box-shadow: none; }
-  .section { padding-right: 22px; padding-left: 22px; }
-}
-
-
-/* Eight distinct, data-driven profile themes */
-.minimalProfessional {
-  border-radius: 12px;
-  box-shadow: 0 12px 42px rgba(23, 35, 75, .05);
-  .cover { height: 82px; background: #f1f3f6; }
-  .avatar, .avatarFallback { border-radius: 18px; }
-  .saveButton { border-radius: 5px; background: #182230; border-color: #182230; }
-}
-.executiveDark {
-  border-color: #263247;
-  background: #111827;
-  .identity h1, .section h2 { color: #f8fafc; }
-  .role, .bio, .contactItem p { color: #cbd5e1; }
-  .cover { background: linear-gradient(130deg, #080d18, #263247 60%, #64748b); }
-  .avatar { border-color: #111827; }
-  .avatarFallback { border-color: #111827; background: #263247; color: #f8fafc; }
-  .section, .footer { border-color: #263247; }
-  .contactItem a { color: #c4b5fd; }
-  .socials a { border-color: #39465c; color: #e2e8f0; }
-  .saveButton { border-color: #c8a96a; background: #c8a96a; color: #111827; }
-  .secondaryButton { border-color: #39465c; background: #1e293b; color: #f8fafc; }
-  .footer { color: #94a3b8; a { color: #c8a96a; } }
-}
-.creativePortfolio {
-  border-radius: 28px;
-  .cover { height: 190px; background: linear-gradient(125deg, #ff6b6b, #845ec2 55%, #00c9a7); }
-  .avatar, .avatarFallback { border-radius: 28px; }
-  .saveButton { border-radius: 999px; background: #6d28d9; border-color: #6d28d9; }
-  .section h2 { color: #6d28d9; }
-}
-.elegantBusiness {
-  border-radius: 8px;
-  .cover { height: 115px; background: linear-gradient(120deg, #e8dfd2, #b7a58e); }
-  .identity h1 { font-family: Georgia, serif; font-weight: 500; letter-spacing: -.02em; }
-  .saveButton { border-radius: 4px; background: #65513d; border-color: #65513d; }
-  .section h2 { font-family: Georgia, serif; font-size: 15px; font-weight: 500; }
-}
-.gradientModern {
-  border: 0;
-  .cover { height: 205px; background: linear-gradient(120deg, #4f46e5, #9333ea 55%, #ec4899); }
-  .saveButton { border: 0; background: linear-gradient(100deg, #4f46e5, #9333ea); }
-  .avatar, .avatarFallback { border-radius: 25px; }
-}
-.personalBranding {
-  border-radius: 30px;
-  .cover { height: 235px; background: linear-gradient(135deg, #0f766e, #164e63 55%, #1e293b); }
-  .identity { text-align: left; }
-  .avatar, .avatarFallback { margin-left: 0; border-radius: 22px; }
-  .identity h1 { font-size: 31px; }
-  .bio { margin-left: 0; }
-  .actions { justify-content: flex-start; }
-  .saveButton { border-radius: 999px; background: #0f766e; border-color: #0f766e; }
-}
-.luxuryCorporate {
-  border-radius: 4px;
-  border-color: #d8c9a8;
-  .cover { height: 125px; background: linear-gradient(120deg, #101827, #26364d 65%, #b59a66); }
-  .identity h1 { font-family: Georgia, serif; font-weight: 500; }
-  .saveButton { border-radius: 3px; background: #9a7b43; border-color: #9a7b43; }
-  .section h2 { color: #8a7042; letter-spacing: .12em; text-transform: uppercase; }
-}
-.modernCorporate {
-  .cover { background: linear-gradient(130deg, #172b65, #4164d8 58%, #9aaaf0); }
-}
-
-
-.companyLogo {
-  display: block;
-  width: auto;
-  max-width: 118px;
-  max-height: 48px;
-  margin: 16px auto 0;
-  object-fit: contain;
-}
-.personalBranding .companyLogo { margin-left: 0; }
-
-
-.reportDetails { padding: 15px 22px; border-top: 1px solid #eef0f5; color: #667085; font-size: 12px; summary { cursor: pointer; font-weight: 700; } form { display: grid; gap: 10px; margin-top: 13px; } label { display: grid; gap: 5px; color: #475467; } input:not([type="text"]), select, textarea { width: 100%; padding: 9px; border: 1px solid #d8deea; border-radius: 7px; background: #fff; color: #344054; font: inherit; } button { min-height: 36px; border: 0; border-radius: 7px; background: #344054; color: #fff; font-size: 12px; cursor: pointer; } }
-.reportTrap { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; }
-.reportSuccess { margin: 0; padding: 12px 22px; border-top: 1px solid #eef0f5; color: #17663b; font-size: 12px; }
-
-
-/* Distinct structural treatments for the eight profile designs */
-.minimalHeader {
-  padding: 38px 28px 10px;
-  background: #fff;
-  .minimalRule { display: block; width: 38px; height: 3px; margin-bottom: 25px; background: #182230; }
-  .identity { padding: 0; text-align: left; }
-  .avatar, .avatarFallback { width: 86px; height: 86px; margin: 0 0 20px; border: 0; border-radius: 14px; }
-  .avatarFallback { background: #eef1f5; color: #182230; }
-  .companyLogo { margin: 0 0 12px; }
-  .identity h1 { font-size: 30px; }
-  .bio { margin-left: 0; }
-}
-.executiveHeader {
-  position: relative;
-  background: #111827;
-  .cover { height: 175px; background: linear-gradient(120deg, #080d18, #263247 65%, #64748b); }
-}
-.executiveIdentity {
-  position: relative;
-  z-index: 1;
-  margin-top: -54px;
-  .identity { padding: 0 30px; text-align: left; }
-  .avatar, .avatarFallback { margin: 0 0 17px; border: 4px solid #111827; }
-  .companyLogo { margin: 0 0 12px; }
-  .identity h1 { font-size: 30px; }
-  .bio { margin-left: 0; }
-}
-.creativeHeader {
-  position: relative;
-  overflow: hidden;
-  padding-bottom: 5px;
-  background: #fff9f5;
-  .cover { height: 225px; background: linear-gradient(125deg, #ff6b6b, #845ec2 55%, #00c9a7); }
-}
-.creativeIdentity {
-  position: relative;
-  z-index: 1;
-  margin-top: -76px;
-  .identity { padding: 0 30px; text-align: left; }
-  .avatar, .avatarFallback { width: 104px; height: 104px; margin: 0 0 17px; border: 5px solid #fff9f5; border-radius: 28px; }
-  .identity h1 { font-size: 32px; }
-  .bio { margin-left: 0; }
-  .companyLogo { margin-left: 0; }
-}
-.creativeOrb {
-  position: absolute;
-  top: 145px;
-  right: -38px;
-  width: 125px;
-  height: 125px;
-  border: 20px solid rgba(255,255,255,.22);
-  border-radius: 50%;
-}
-.elegantHeader {
-  padding: 38px 28px 28px;
-  background: #f8f4ed;
-  text-align: center;
-  .elegantOverline { display: block; margin-bottom: 25px; color: #927c60; font-size: 9px; font-weight: 800; letter-spacing: .24em; }
-  .identity { padding: 0; }
-  .avatar, .avatarFallback { width: 100px; height: 100px; margin: 0 auto 18px; border: 3px solid #fff; border-radius: 50%; }
-  .companyLogo { margin: 0 auto 16px; }
-  .identity h1 { font-family: Georgia, serif; font-size: 31px; font-weight: 500; letter-spacing: -.02em; }
-  .role { color: #786b5b; }
-  .bio { max-width: 340px; color: #766d61; }
-  .elegantRule { display: block; width: 52px; height: 1px; margin: 25px auto 0; background: #b59a76; }
-}
-.gradientHeader {
-  position: relative;
-  padding-bottom: 28px;
-  background: linear-gradient(145deg, #312e81, #7e22ce 62%, #db2777);
-  .cover { height: 190px; background: linear-gradient(135deg, rgba(49,46,129,.2), rgba(219,39,119,.18)); }
-  .identity { position: relative; z-index: 1; margin-top: -88px; }
-  .avatar, .avatarFallback { border-color: rgba(255,255,255,.95); }
-  .avatarFallback { background: #fff; color: #6d28d9; }
-  .identity h1 { color: #fff; }
-  .role, .bio { color: rgba(255,255,255,.82); }
-  .companyLogo { padding: 5px; border-radius: 8px; background: rgba(255,255,255,.9); }
-}
-.personalHeader {
+.tile {
   display: grid;
-  grid-template-columns: 36% 64%;
-  min-height: 270px;
-  background: #ecfdf5;
-  .cover { height: 100%; min-height: 270px; background: linear-gradient(145deg, #0f766e, #164e63 60%, #1e293b); }
+  width: var(--tile);
+  height: var(--tile);
+  place-items: center;
+  border: var(--tile-border);
+  border-radius: var(--tile-radius);
+  background: var(--tile-bg);
+  box-shadow: var(--tile-shadow, none);
+  color: var(--tile-ink);
+  font-size: 22px;
+  text-decoration: none;
+  transition: transform 0.15s ease;
+  &:hover { transform: translateY(-2px); }
 }
-.personalIdentity {
+
+.ctas { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 20px; }
+.pillPrimary, .pillSecondary {
+  display: inline-flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1.5px solid transparent;
+  border-radius: var(--pill-radius);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.pillPrimary { border-color: var(--p1-border, transparent); background: var(--p1-bg); box-shadow: var(--p1-shadow, none); color: var(--p1-ink); }
+.pillSecondary { border-color: var(--p2-border); background: var(--p2-bg); color: var(--p2-ink); }
+
+.sheet {
+  position: relative;
+  z-index: 1;
+  flex: 1 0 auto; /* fills the screen on tall phones so the page background never shows below it */
+  margin-top: var(--sheet-gap, 24px);
+  padding: var(--sheet-pad, 0 22px 24px);
+  border-radius: var(--sheet-radius, 0);
+  background: var(--sheet-bg);
+  color: var(--sheet-ink);
+}
+.details {
+  display: grid;
+  gap: var(--rows-gap, 0);
+  padding: var(--details-pad, 0);
+  border-radius: var(--details-radius, 0);
+  background: var(--details-bg, none);
+}
+.row {
+  position: relative;
   display: flex;
   align-items: center;
-  padding: 24px 20px;
-  .identity { width: 100%; padding: 0; text-align: left; }
-  .avatar, .avatarFallback { width: 82px; height: 82px; margin: 0 0 18px; border: 3px solid #fff; border-radius: 22px; }
-  .identity h1 { font-size: 27px; }
-  .role { color: #0f766e; }
-  .bio { margin-left: 0; }
-  .companyLogo { margin-left: 0; }
+  gap: 14px;
+  padding: var(--row-pad, 14px 4px);
+  border: var(--row-border, 0);
+  border-radius: var(--row-radius, 0);
+  background: var(--row-bg, none);
+  box-shadow: var(--row-shadow, none);
+  color: inherit;
+  text-decoration: none;
+  & + &::before { content: ""; position: absolute; top: 0; right: 0; left: var(--row-line-inset, 0); height: 1px; background: var(--row-line); }
 }
-.luxuryHeader {
-  padding: 36px 28px 30px;
-  background: linear-gradient(180deg, #111827, #202b3c);
-  color: #f8f5ed;
-  text-align: center;
-  .luxuryMonogram { display: grid; width: 54px; height: 54px; place-items: center; margin: 0 auto 22px; border: 1px solid #b59a66; border-radius: 50%; color: #d8c39a; font-family: Georgia, serif; font-size: 17px; letter-spacing: .08em; }
-  .identity { padding: 0; }
-  .avatar, .avatarFallback { width: 94px; height: 94px; margin: 0 auto 17px; border: 2px solid #b59a66; border-radius: 50%; }
-  .avatarFallback { background: #2d394b; color: #e0c99a; }
-  .companyLogo { margin: 0 auto 13px; }
-  .identity h1 { color: #f8f5ed; font-family: Georgia, serif; font-size: 29px; font-weight: 500; }
-  .role, .bio { color: #c7c0b2; }
-  .luxuryRule { display: block; width: 64px; height: 1px; margin: 26px auto 0; background: #b59a66; }
+.rowIcon { display: grid; flex: none; width: 38px; height: 38px; place-items: center; border-radius: var(--icon-radius); background: var(--icon-bg); color: var(--icon-ink); font-size: 18px; }
+.rowText {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
+  small { color: var(--row-muted); font-size: 12px; }
+  strong { color: var(--row-ink); font-size: 14.5px; font-weight: 600; overflow-wrap: anywhere; }
 }
-.contactItem {
+.chev { display: grid; color: var(--chev, var(--row-muted)); font-size: 18px; }
+.save {
   display: flex;
+  min-height: 54px;
   align-items: center;
-  gap: 13px;
-  .contactIcon {
-    display: grid;
-    flex: 0 0 38px;
-    width: 38px;
-    height: 38px;
-    place-items: center;
-    border-radius: 12px;
-    background: #f0f3fb;
-    color: #3157d5;
-    font-size: 17px;
-    font-weight: 700;
-    text-transform: none;
-    letter-spacing: 0;
-  }
-  .contactText { display: grid; min-width: 0; gap: 4px; }
-  .contactText > span { color: #98a2b3; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
-  .contactText a, .contactText p { overflow-wrap: anywhere; margin: 0; color: #243b83; font-size: 14px; text-decoration: none; }
-  .contactText p { color: #475467; }
+  justify-content: center;
+  gap: 10px;
+  margin-top: var(--save-mt, 18px);
+  border-radius: var(--save-radius);
+  background: var(--save-bg);
+  box-shadow: var(--save-shadow, none);
+  color: var(--save-ink);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
 }
-.sectionMark { margin-right: 8px; color: #8b95a7; }
-.socials {
-  a { gap: 9px; min-height: 42px; padding: 4px 12px 4px 5px; }
-  .socialIcon { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; background: #eef2ff; color: #3157d5; font-size: 11px; font-weight: 850; }
+
+.legal { border-top: 1px solid var(--legal-line, rgba(127, 127, 127, 0.18)); background: var(--sheet-bg); color: var(--sheet-muted); }
+.reportDetails {
+  padding: 15px 22px;
+  font-size: 12px;
+  summary { cursor: pointer; font-weight: 700; }
+  form { display: grid; gap: 10px; margin-top: 13px; }
+  label { display: grid; gap: 5px; }
+  input:not([type="text"]), select, textarea { width: 100%; padding: 9px; border: 1px solid #d8deea; border-radius: 7px; background: #fff; color: #344054; font: inherit; }
+  button { min-height: 36px; border: 0; border-radius: 7px; background: #344054; color: #fff; font-size: 12px; cursor: pointer; }
 }
-.executiveDark {
-  .contactItem .contactIcon { background: #263247; color: #d6bd88; }
-  .contactItem .contactText a { color: #c4b5fd; }
-  .socials .socialIcon { background: #263247; color: #e2c58b; }
-}
-.creativePortfolio {
-  .contactItem .contactIcon { background: #fce7f3; color: #9d174d; }
-  .socials .socialIcon { background: #f3e8ff; color: #7e22ce; }
-}
-.elegantBusiness {
-  .contactItem .contactIcon { background: #eee6d9; color: #786044; }
-  .socials .socialIcon { background: #eee6d9; color: #786044; }
-}
-.gradientModern {
-  .contactItem .contactIcon { background: #f3e8ff; color: #7e22ce; }
-  .socials .socialIcon { background: #fce7f3; color: #be185d; }
-}
-.personalBranding {
-  .contactItem .contactIcon { background: #ccfbf1; color: #0f766e; }
-  .socials .socialIcon { background: #ccfbf1; color: #0f766e; }
-}
-.luxuryCorporate {
-  .contactItem .contactIcon { background: #f5f0e6; color: #8a7042; }
-  .socials .socialIcon { background: #f5f0e6; color: #8a7042; }
-}
+.reportTrap { position: absolute; left: -10000px; width: 1px; height: 1px; opacity: 0; }
+.reportSuccess { margin: 0; padding: 12px 22px; color: #17663b; font-size: 12px; }
+.footer { padding: 6px 18px 20px; font-size: 11px; text-align: center; a { color: var(--accent-link, var(--accent)); text-decoration: none; } }
+
 @media (max-width: 520px) {
-  .personalHeader { grid-template-columns: 1fr; }
-  .personalHeader .cover { min-height: 130px; height: 130px; }
-  .personalIdentity { padding: 0 22px 24px; }
-  .personalIdentity .identity { margin-top: -48px; }
+  .page { padding: 0; background: var(--card-bg); }
+  .profile { min-height: 100svh; border-radius: 0; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) { .tile { transition: none; } }
+
+/* ======================================================================
+   1. Modern Corporate = "Evergreen": portrait hero, curved swoosh, green panel
+   ====================================================================== */
+.modernCorporate {
+  --page-bg: #e8efea;
+  --ink: #13231a;
+  --muted: #56655d;
+  --accent: #0e4a2b;
+  --align: left;
+  --justify: flex-start;
+  --cover-h: 320px;
+  --cover-bg: linear-gradient(160deg, #d4e6da, #86b499 55%, #2f6b4a);
+  --cover-pos: center 15%;
+  --name-break: block;
+  --name-case: uppercase;
+  --name-size: 31px;
+  --name-track: 0.05em;
+  --first-weight: 400;
+  --last-weight: 800;
+  --last-track: 0.16em;
+  --rule-display: block;
+  --tile-bg: #fff;
+  --p1-bg: #1f6b3f;
+  --p2-bg: #fff;
+  --p2-ink: #1f6b3f;
+  --p2-border: #1f6b3f;
+  --details-bg: #0e4a2b;
+  --details-radius: 20px;
+  --details-pad: 4px 16px;
+  --row-pad: 14px 0;
+  --icon-bg: transparent;
+  --icon-ink: #fff;
+  --row-ink: #fff;
+  --row-muted: rgba(255, 255, 255, 0.72);
+  --row-line: rgba(255, 255, 255, 0.16);
+  --save-bg: #3d6e51;
+  --save-radius: 14px;
+  .cover::after { content: ""; position: absolute; right: 0; bottom: -1px; left: 0; z-index: 1; height: 96px; border-top-right-radius: 100% 100%; background: #0e4a2b; }
+  .body::before { content: ""; position: absolute; top: -74px; right: 0; left: 0; z-index: 2; height: 78px; border-top-right-radius: 100% 100%; background: #fff; }
+  .identity { position: relative; z-index: 3; padding-top: 12px; }
+  .socials, .ctas { position: relative; z-index: 3; }
+  .rowIcon { width: 30px; background: none; }
+}
+
+/* ======================================================================
+   2. Executive Dark = "Midnight": navy, orange ring, glass social panel, white sheet
+   ====================================================================== */
+.executiveDark {
+  --page-bg: #070d1c;
+  --card-bg: linear-gradient(175deg, #1c2c5c 0%, #13214c 55%, #0e1a3c 100%);
+  --ink: #fff;
+  --muted: #bcc7e6;
+  --accent: #f28a1e;
+  --cover-h: 96px;
+  --cover-mask: linear-gradient(180deg, #000 45%, transparent);
+  --cover-bg: radial-gradient(circle at 15% 0%, rgba(255, 255, 255, 0.09) 0 46px, transparent 47px), radial-gradient(circle at 92% 30%, rgba(255, 255, 255, 0.06) 0 70px, transparent 71px);
+  --avatar: 150px;
+  --ring: 5px;
+  --ring-bg: conic-gradient(from 10deg, #f28a1e 0 42%, rgba(255, 255, 255, 0.92) 42% 100%);
+  --gap: 3px;
+  --gap-color: #fff;
+  --avatar-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+  --name-case: uppercase;
+  --name-size: 28px;
+  --name-track: 0.05em;
+  --first-color: #fff;
+  --first-weight: 700;
+  --last-color: #f28a1e;
+  --quote-ink: #d5dcf2;
+  --quote-style: italic;
+  --quote-display: block;
+  --quote-mark: inline;
+  --quote-mark-gap: 8px;
+  --quote-p: inline;
+  --soc-pad: 14px;
+  --soc-border: 1px solid rgba(255, 255, 255, 0.2);
+  --soc-radius: 26px;
+  --soc-bg: rgba(255, 255, 255, 0.04);
+  --tile-radius: 15px;
+  --tile-bg: rgba(255, 255, 255, 0.09);
+  --tile-ink: #fff;
+  --tile-border: 0;
+  --p1-bg: #f28a1e;
+  --p1-shadow: 0 8px 20px rgba(242, 138, 30, 0.35);
+  --p2-bg: #0d1838;
+  --p2-ink: #fff;
+  --p2-border: rgba(255, 255, 255, 0.32);
+  --sheet-bg: #fff;
+  --sheet-radius: 32px 32px 0 0;
+  --sheet-gap: 28px;
+  --sheet-pad: 8px 22px 24px;
+  --sheet-ink: #13204a;
+  --icon-bg: #1a2b5c;
+  --icon-ink: #fff;
+  --row-ink: #13204a;
+  --row-line-inset: 52px;
+  --save-bg: #f28a1e;
+  &.hasCover { --cover-h: 160px; }
+}
+
+/* ======================================================================
+   3. Elegant Business = "Ivory & Gold": cream, gold ring, serif, soft cards, gold footer
+   ====================================================================== */
+.elegantBusiness {
+  --page-bg: #ece3d3;
+  --card-bg: linear-gradient(180deg, #fcf8f0, #f4ebdc);
+  --display: var(--serif);
+  --ink: #6b4f2b;
+  --muted: #8a7557;
+  --accent: #b8893a;
+  --cover-h: 90px;
+  --cover-bg: none;
+  --cover-mask: linear-gradient(180deg, #000 45%, transparent);
+  --avatar: 150px;
+  --ring: 4px;
+  --ring-bg: linear-gradient(135deg, #e6c581, #b8893a 55%, #e3c27f);
+  --gap: 5px;
+  --gap-color: #fcf8f0;
+  --avatar-shadow: 0 12px 30px rgba(150, 110, 45, 0.25);
+  --name-case: uppercase;
+  --name-size: 27px;
+  --name-track: 0.07em;
+  --first-color: #8a6430;
+  --first-weight: 500;
+  --last-color: #8a6430;
+  --last-weight: 500;
+  --quote-ink: #7a6648;
+  --quote-style: italic;
+  --quote-display: block;
+  --quote-mark: inline;
+  --quote-mark-gap: 8px;
+  --quote-p: inline;
+  --tile-radius: 17px;
+  --tile-bg: rgba(255, 255, 255, 0.65);
+  --tile-ink: #b8893a;
+  --tile-border: 1.5px solid #dcc08a;
+  --tile-shadow: 0 6px 16px rgba(160, 120, 50, 0.12);
+  --p1-bg: linear-gradient(180deg, #d3a95c, #b8893a);
+  --p1-shadow: 0 8px 18px rgba(184, 137, 58, 0.3);
+  --p2-bg: #0f4a37;
+  --p2-ink: #fff;
+  --p2-border: #0f4a37;
+  --sheet-bg: transparent;
+  --sheet-ink: #6b4f2b;
+  --sheet-pad: 0 22px 0;
+  --rows-gap: 10px;
+  --row-pad: 12px 14px;
+  --row-radius: 20px;
+  --row-bg: rgba(255, 255, 255, 0.72);
+  --row-border: 1px solid #eadcc0;
+  --row-line: transparent;
+  --icon-bg: #0f3d2e;
+  --icon-ink: #fff;
+  --row-ink: #5b4326;
+  --row-muted: #9a8564;
+  --chev: #b8893a;
+  --legal-line: rgba(184, 137, 58, 0.25);
+  .save { min-height: 0; margin: 26px -22px 0; padding: 36px 22px 28px; border-radius: 50% 50% 0 0 / 40px 40px 0 0; background: linear-gradient(180deg, #cba058, #b0823a); }
+  &.hasCover { --cover-h: 150px; }
+}
+
+/* ======================================================================
+   4. Luxury Corporate = "Noir & Gold": black, gold ring, serif, dark sheet
+   ====================================================================== */
+.luxuryCorporate {
+  --page-bg: #09090b;
+  --card-bg: linear-gradient(180deg, #19191e, #101013);
+  --display: var(--serif);
+  --ink: #f6f1e6;
+  --muted: #b9b09c;
+  --accent: #c9a45c;
+  --cover-h: 90px;
+  --cover-bg: radial-gradient(circle at 85% 0%, rgba(201, 164, 92, 0.16) 0 60px, transparent 61px);
+  --cover-mask: linear-gradient(180deg, #000 45%, transparent);
+  --avatar: 140px;
+  --ring-bg: linear-gradient(135deg, #e7c987, #a8803a);
+  --gap: 4px;
+  --gap-color: #19191e;
+  --name-case: uppercase;
+  --name-size: 26px;
+  --name-track: 0.1em;
+  --first-color: #f6f1e6;
+  --first-weight: 400;
+  --last-color: #c9a45c;
+  --last-weight: 600;
+  --quote-ink: #cfc6b1;
+  --quote-style: italic;
+  --quote-display: block;
+  --quote-mark: inline;
+  --quote-mark-gap: 8px;
+  --quote-p: inline;
+  --tile-bg: transparent;
+  --tile-ink: #d7b673;
+  --tile-border: 1px solid #6d5a33;
+  --pill-radius: 8px;
+  --p1-bg: #c9a45c;
+  --p1-ink: #17130a;
+  --p2-ink: #e7c987;
+  --p2-border: #8b7140;
+  --sheet-bg: #1c1c21;
+  --sheet-radius: 28px 28px 0 0;
+  --sheet-pad: 8px 22px 24px;
+  --sheet-ink: #f6f1e6;
+  --sheet-muted: #8e8672;
+  --icon-bg: rgba(201, 164, 92, 0.14);
+  --icon-ink: #e0bd78;
+  --row-ink: #f6f1e6;
+  --row-muted: #a39a85;
+  --row-line: #2e2e35;
+  --row-line-inset: 52px;
+  --chev: #c9a45c;
+  --save-bg: linear-gradient(180deg, #dcba72, #b8923f);
+  --save-ink: #17130a;
+  --save-radius: 10px;
+  &.hasCover { --cover-h: 150px; }
+}
+
+/* ======================================================================
+   5. Minimal Professional = "Clean Slate": white, black, left-aligned, hairlines
+   ====================================================================== */
+.minimalProfessional {
+  --page-bg: #f3f4f6;
+  --card-radius: 20px;
+  --card-shadow: 0 14px 48px rgba(16, 24, 40, 0.08);
+  --ink: #111827;
+  --muted: #6b7280;
+  --accent: #111827;
+  --align: left;
+  --justify: flex-start;
+  --cover-h: 0px;
+  --cover-bg: linear-gradient(130deg, #e5e7eb, #f3f4f6);
+  --avatar: 92px;
+  --avatar-mt: 38px;
+  --avatar-radius: 22px;
+  --avatar-inner: 22px;
+  --ring: 0px;
+  --ml: 26px;
+  --mr: auto;
+  --name-size: 30px;
+  --first-weight: 300;
+  --last-weight: 800;
+  --first-color: #111827;
+  --rule-display: block;
+  --quote-ink: #4b5563;
+  --tile: 44px;
+  --tile-bg: #fff;
+  --tile-border: 1px solid #d1d5db;
+  --pill-radius: 12px;
+  --p2-bg: #fff;
+  --icon-bg: #f3f4f6;
+  --icon-radius: 11px;
+  --row-line: #eceef2;
+  --row-line-inset: 52px;
+  --save-bg: #111827;
+  --save-radius: 12px;
+  &.hasCover { --cover-h: 130px; --avatar-mt: -46px; }
+  .sheet { --sheet-pad: 0 26px 26px; }
+  &:not(.hasCover) .logo { top: 34px; right: 26px; left: auto; padding: 0; background: none; box-shadow: none; }
+}
+
+/* ======================================================================
+   6. Creative Portfolio = "Coral Pop": playful gradient, squircle avatar, pastel cards
+   ====================================================================== */
+.creativePortfolio {
+  --page-bg: #ffe9e0;
+  --card-bg: #fffaf6;
+  --card-radius: 38px;
+  --ink: #2a1b3d;
+  --muted: #6d5b82;
+  --accent: #7c3aed;
+  --align: left;
+  --justify: flex-start;
+  --cover-h: 200px;
+  --cover-bg: linear-gradient(125deg, #ff6b6b, #845ec2 55%, #00c9a7);
+  --avatar: 108px;
+  --avatar-radius: 34px;
+  --avatar-inner: 30px;
+  --ring: 0px;
+  --gap: 5px;
+  --gap-color: #fffaf6;
+  --ml: 26px;
+  --mr: auto;
+  --name-size: 33px;
+  --first-weight: 700;
+  --last-weight: 800;
+  --tile: 48px;
+  --tile-radius: 16px;
+  --tile-bg: #fff;
+  --tile-border: 1.5px solid #eadcff;
+  --tile-shadow: 0 6px 16px rgba(124, 58, 237, 0.12);
+  --p1-bg: linear-gradient(100deg, #7c3aed, #c026d3);
+  --p1-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
+  --p2-bg: #fff;
+  --p2-border: #d8c5fb;
+  --sheet-bg: #fffaf6;
+  --rows-gap: 10px;
+  --row-pad: 12px 14px;
+  --row-radius: 20px;
+  --row-bg: #fff;
+  --row-border: 1px solid #f0e4ff;
+  --row-line: transparent;
+  --icon-bg: linear-gradient(135deg, #ffe0d6, #e9d5ff);
+  --icon-radius: 14px;
+  --row-muted: #8b7aa0;
+  --save-bg: linear-gradient(100deg, #ff6b6b, #7c3aed);
+  --save-radius: 999px;
+  --save-shadow: 0 10px 24px rgba(124, 58, 237, 0.28);
+  .nameLast { background: linear-gradient(90deg, #ff6b6b, #7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; }
+}
+
+/* ======================================================================
+   7. Gradient Modern = "Aurora": vivid rounded header, centered, lavender panel
+   ====================================================================== */
+.gradientModern {
+  --page-bg: linear-gradient(160deg, #ede9fe, #fce7f3);
+  --card-radius: 36px;
+  --ink: #1e1b4b;
+  --muted: #6b6a8f;
+  --accent: #7c3aed;
+  --cover-h: 200px;
+  --cover-bg: linear-gradient(135deg, #4f46e5, #9333ea 55%, #ec4899);
+  --avatar: 116px;
+  --ring: 5px;
+  --ring-bg: #fff;
+  --avatar-shadow: 0 12px 30px rgba(79, 70, 229, 0.3);
+  --name-size: 30px;
+  --first-weight: 700;
+  --last-weight: 800;
+  --tile-radius: 50%;
+  --tile-bg: #f5f0ff;
+  --tile-border: 0;
+  --p1-bg: linear-gradient(100deg, #4f46e5, #9333ea);
+  --p1-shadow: 0 8px 20px rgba(109, 40, 217, 0.3);
+  --p2-bg: #fff;
+  --p2-border: #d8ccfb;
+  --details-bg: #f6f2ff;
+  --details-radius: 24px;
+  --details-pad: 4px 16px;
+  --icon-bg: #fff;
+  --row-line: #e6dcfb;
+  --row-line-inset: 52px;
+  --save-bg: linear-gradient(100deg, #ec4899, #9333ea);
+  --save-shadow: 0 10px 24px rgba(147, 51, 234, 0.3);
+  .cover { border-radius: 0 0 38px 38px; }
+  .nameLast { background: linear-gradient(90deg, #9333ea, #ec4899); -webkit-background-clip: text; background-clip: text; color: transparent; }
+}
+
+/* ======================================================================
+   8. Personal Branding = "Teal Studio": diagonal header, left-aligned, mint panel
+   ====================================================================== */
+.personalBranding {
+  --page-bg: #dcefea;
+  --card-radius: 32px;
+  --ink: #0f2a2a;
+  --muted: #4f6b6a;
+  --accent: #0f766e;
+  --align: left;
+  --justify: flex-start;
+  --cover-h: 200px;
+  --cover-bg: linear-gradient(135deg, #0f766e, #164e63 60%, #1e293b);
+  --avatar: 108px;
+  --avatar-radius: 28px;
+  --avatar-inner: 24px;
+  --ring: 0px;
+  --gap: 5px;
+  --ml: 26px;
+  --mr: auto;
+  --name-size: 32px;
+  --first-weight: 600;
+  --last-weight: 800;
+  --tile-bg: #d9f7ef;
+  --tile-border: 0;
+  --p2-bg: #d9f7ef;
+  --p2-border: transparent;
+  --details-bg: #ecfdf8;
+  --details-radius: 22px;
+  --details-pad: 4px 16px;
+  --icon-bg: #ccfbf1;
+  --row-line: #cdeee6;
+  --row-line-inset: 52px;
+  --save-bg: #0f766e;
+  --save-radius: 14px;
+  .cover { clip-path: polygon(0 0, 100% 0, 100% 78%, 0 100%); }
 }
