@@ -1,0 +1,197 @@
+diff --git a/.env.example b/.env.example
+index 0cea4ae..e98062e 100644
+--- a/.env.example
++++ b/.env.example
+@@ -15,8 +15,9 @@ AUTH_SECRET=""
+ # Auth.js v5 on Vercel infers the host from request headers; do not set AUTH_URL there.
+ 
+ # Vercel Blob (server-side only). Use the token of a *Public* Blob store: card images are public.
+-# Accepted names, first one set wins: VCARD_BLOB_READ_WRITE_TOKEN, VC_BLOB_READ_WRITE_TOKEN, BLOB_READ_WRITE_TOKEN.
+-BLOB_READ_WRITE_TOKEN=""
++# Vercel names this "<PREFIX>_READ_WRITE_TOKEN". Accepted, first one set wins:
++# VC_READ_WRITE_TOKEN, VCARD_READ_WRITE_TOKEN, VC_BLOB_READ_WRITE_TOKEN, VCARD_BLOB_READ_WRITE_TOKEN, BLOB_READ_WRITE_TOKEN.
++VC_READ_WRITE_TOKEN=""
+ 
+ # SMTP email delivery (required for registration verification and password resets)
+ SMTP_HOST=""
+diff --git a/README.md b/README.md
+index a0b8d50..f74bd8f 100644
+--- a/README.md
++++ b/README.md
+@@ -72,7 +72,7 @@ This lets you register and sign in locally before configuring an email provider.
+ 1. Open your Vercel project and go to **Storage**.
+ 2. Create a **Blob** store and connect it to this project.
+ 3. Enable the store for the environments you use.
+-4. Ensure the read-write token of the **public** store is present as `BLOB_READ_WRITE_TOKEN` (Vercel adds it when you connect the store; `VCARD_BLOB_READ_WRITE_TOKEN` and `VC_BLOB_READ_WRITE_TOKEN` also work) in local `.env` and in Vercel Environment Variables. Redeploy after adding it.
++4. Add the read-write token of the **public** store. Vercel names it `<PREFIX>_READ_WRITE_TOKEN` after the prefix you chose when connecting the store; the app accepts `VC_READ_WRITE_TOKEN`, `VCARD_READ_WRITE_TOKEN`, `VC_BLOB_READ_WRITE_TOKEN`, `VCARD_BLOB_READ_WRITE_TOKEN` and (last) `BLOB_READ_WRITE_TOKEN`; the first one that is set is used. Redeploy after changing it. To verify, sign in as an admin (`ADMIN_EMAILS`) and open `/api/admin/blob-check`.
+ 
+ Profile photos, cover images and company logos accept JPG, PNG and WebP files up to 4 MB. Uploads are resized and re-encoded to WebP on the server, which also strips EXIF metadata (such as GPS location) from photos.
+ 
+diff --git a/src/app/api/admin/blob-check/route.ts b/src/app/api/admin/blob-check/route.ts
+new file mode 100644
+index 0000000..4e8bda7
+--- /dev/null
++++ b/src/app/api/admin/blob-check/route.ts
+@@ -0,0 +1,41 @@
++import { NextResponse } from "next/server";
++import { del, put } from "@vercel/blob";
++import { auth } from "@/auth";
++import { isAdminEmail } from "@/lib/admin";
++import { classifyBlobError, configuredBlobVariables, getBlobConfig, storeIdFromToken } from "@/lib/blob";
++
++export const runtime = "nodejs";
++export const dynamic = "force-dynamic";
++
++/**
++ * Admin-only diagnostic: open /api/admin/blob-check while signed in as an admin.
++ * It reports which environment variable the app uses and whether a tiny PUBLIC test upload works.
++ * It never returns the token itself.
++ */
++export async function GET() {
++  const session = await auth();
++  if (!session?.user?.id || !isAdminEmail(session.user.email)) {
++    return NextResponse.json({ error: "Not found" }, { status: 404 });
++  }
++
++  const config = getBlobConfig();
++  const report: Record<string, unknown> = {
++    variablesSet: configuredBlobVariables(),
++    usedVariable: config?.source ?? null,
++    storeId: config ? storeIdFromToken(config.token) : null,
++  };
++  if (!config) {
++    return NextResponse.json({ ...report, ok: false, problem: "No Blob token variable is set for this environment." }, { headers: { "Cache-Control": "no-store" } });
++  }
++
++  try {
++    const blob = await put("diagnostics/blob-check.txt", "ok", { access: "public", token: config.token, addRandomSuffix: true, contentType: "text/plain" });
++    await del(blob.url, { token: config.token }).catch(() => undefined);
++    return NextResponse.json({ ...report, ok: true, result: "A public test upload worked and was removed again." }, { headers: { "Cache-Control": "no-store" } });
++  } catch (error) {
++    return NextResponse.json(
++      { ...report, ok: false, failure: classifyBlobError(error), errorType: error instanceof Error ? error.constructor.name : "unknown", message: error instanceof Error ? error.message : String(error) },
++      { status: 200, headers: { "Cache-Control": "no-store" } },
++    );
++  }
++}
+diff --git a/src/app/api/cards/[cardId]/media/route.ts b/src/app/api/cards/[cardId]/media/route.ts
+index adbcbbe..bf0f9c1 100644
+--- a/src/app/api/cards/[cardId]/media/route.ts
++++ b/src/app/api/cards/[cardId]/media/route.ts
+@@ -1,5 +1,5 @@
+ import { del, put } from "@vercel/blob";
+-import { getBlobToken } from "@/lib/blob";
++import { classifyBlobError, getBlobConfig } from "@/lib/blob";
+ import sharp from "sharp";
+ import { auth } from "@/auth";
+ import { prisma } from "@/lib/prisma";
+@@ -98,11 +98,12 @@ export async function POST(request: Request, { params }: RouteProps) {
+     return backToEditor(request, cardId, "invalid-file", mediaType);
+   }
+ 
+-  const blobToken = getBlobToken();
+-  if (!blobToken) {
+-    console.error("[card-media-upload] No Blob token is configured (BLOB_READ_WRITE_TOKEN / VCARD_BLOB_READ_WRITE_TOKEN / VC_BLOB_READ_WRITE_TOKEN).");
++  const blobConfig = getBlobConfig();
++  if (!blobConfig) {
++    console.error("[card-media-upload] No Blob token is configured (VC_READ_WRITE_TOKEN, VCARD_READ_WRITE_TOKEN, ... BLOB_READ_WRITE_TOKEN).");
+     return backToEditor(request, cardId, "not-configured", mediaType);
+   }
++  const blobToken = blobConfig.token;
+ 
+   const pathname = "vcard/" + session.user.id + "/" + card.id + "/" + mediaType.toLowerCase() + ".webp";
+   let uploadedUrl: string | null = null;
+@@ -153,14 +154,15 @@ export async function POST(request: Request, { params }: RouteProps) {
+ 
+     return backToEditor(request, cardId, "uploaded", mediaType);
+   } catch (error) {
+-    console.error("[card-media-upload] Failed during " + failureStage, error);
++    console.error("[card-media-upload] Failed during " + failureStage + " using " + blobConfig.source, error);
+     if (uploadedUrl) {
+       await del(uploadedUrl, { token: blobToken }).catch(() => undefined);
+     }
+     const editorUrl = new URL("/dashboard/cards/" + cardId + "/edit", request.url);
+     editorUrl.searchParams.set("media", "failed");
+     editorUrl.searchParams.set("mediaType", mediaType);
+-    editorUrl.searchParams.set("reason", failureStage);
++    // For storage failures, say *why* (wrong token, private store, ...) instead of one vague message.
++    editorUrl.searchParams.set("reason", failureStage === "blob" ? classifyBlobError(error) : failureStage);
+     return NextResponse.redirect(editorUrl, 303);
+   }
+ }
+diff --git a/src/app/dashboard/cards/[cardId]/edit/page.tsx b/src/app/dashboard/cards/[cardId]/edit/page.tsx
+index 2ff6dab..242a02d 100644
+--- a/src/app/dashboard/cards/[cardId]/edit/page.tsx
++++ b/src/app/dashboard/cards/[cardId]/edit/page.tsx
+@@ -65,7 +65,11 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
+         {query.media === "uploaded" && <p className={formStyles.success}>{query.mediaType?.replaceAll("_", " ").toLowerCase()} uploaded successfully.</p>}
+         {query.media === "not-configured" && <p className={formStyles.error}>The public image store is not connected yet. Create a Public Vercel Blob store, connect it to this project and add its read-write token as BLOB_READ_WRITE_TOKEN, then redeploy.</p>}
+         {query.media === "invalid-file" && <p className={formStyles.error}>Choose a JPG, PNG or WebP image smaller than 4 MB.</p>}
+-        {query.media === "failed" && query.reason === "blob" && <p className={formStyles.error}>The public image store rejected the upload. Confirm that the Blob token belongs to a Public store (a Private store rejects public uploads). The server log contains the exact error.</p>}
++        {query.media === "failed" && query.reason === "token" && <p className={formStyles.error}>The image store did not accept the access token. Make sure the token in Vercel belongs to a Public Blob store and is set for this environment, then redeploy.</p>}
++        {query.media === "failed" && query.reason === "access-mode" && <p className={formStyles.error}>The image store refused a public upload: the token belongs to a Private store. Use the token of a Public Blob store.</p>}
++        {query.media === "failed" && query.reason === "store-missing" && <p className={formStyles.error}>The Blob store for this token no longer exists. Create a Public store and update the token in Vercel.</p>}
++        {query.media === "failed" && query.reason === "store-suspended" && <p className={formStyles.error}>The Blob store is suspended. Check your Vercel account and billing.</p>}
++        {query.media === "failed" && query.reason === "blob" && <p className={formStyles.error}>The image store rejected the upload for an unrecognised reason. Open the admin check at /api/admin/blob-check, or see the server logs.</p>}
+         {query.media === "failed" && query.reason === "database" && <p className={formStyles.error}>The image reached Blob storage, but the profile could not be updated in the database. Check the Neon connection and server logs.</p>}
+         {query.media === "failed" && !query.reason && <p className={formStyles.error}>The image could not be uploaded. Check the server logs for the upload error.</p>}
+         {query.media === "rate-limited" && <p className={formStyles.error}>You have uploaded too many images recently. Please try again later.</p>}
+diff --git a/src/lib/blob.ts b/src/lib/blob.ts
+index 4b6ee2e..00d32f4 100644
+--- a/src/lib/blob.ts
++++ b/src/lib/blob.ts
+@@ -1,17 +1,45 @@
+ /**
+  * Token for the PUBLIC Vercel Blob store that holds card images.
+  *
+- * Vercel names the variable after the prefix chosen when the store is connected, so accept the
+- * names this project has used, then Vercel's default. First one that is set wins.
++ * Vercel names the variable "<PREFIX>_READ_WRITE_TOKEN" after the prefix chosen when the store is
++ * connected (e.g. VC_READ_WRITE_TOKEN). First name that is set wins, so put the one you want first.
++ * BLOB_READ_WRITE_TOKEN (Vercel's default) is last on purpose: it often belongs to an older store.
+  */
+-const TOKEN_VARIABLES = ["VCARD_BLOB_READ_WRITE_TOKEN", "VC_BLOB_READ_WRITE_TOKEN", "BLOB_READ_WRITE_TOKEN"] as const;
++const TOKEN_VARIABLES = [
++  "VC_READ_WRITE_TOKEN",
++  "VCARD_READ_WRITE_TOKEN",
++  "VC_BLOB_READ_WRITE_TOKEN",
++  "VCARD_BLOB_READ_WRITE_TOKEN",
++  "BLOB_READ_WRITE_TOKEN",
++] as const;
+ 
+-export function getBlobToken() {
+-  for (const name of TOKEN_VARIABLES) {
+-    const value = process.env[name]?.trim();
+-    if (value) return value;
++export function getBlobConfig(): { token: string; source: string } | null {
++  for (const source of TOKEN_VARIABLES) {
++    const token = process.env[source]?.trim();
++    if (token) return { token, source };
+   }
+-  return undefined;
++  return null;
+ }
+ 
+-export const BLOB_TOKEN_HELP = "Create a Public Vercel Blob store, connect it to this project and add its read-write token as BLOB_READ_WRITE_TOKEN (or VCARD_BLOB_READ_WRITE_TOKEN), then redeploy.";
++/** Names that are set (never their values), for diagnostics. */
++export function configuredBlobVariables() {
++  return TOKEN_VARIABLES.filter((name) => Boolean(process.env[name]?.trim()));
++}
++
++/** Tokens look like vercel_blob_rw_<storeId>_<secret>; the store id is not secret and identifies the store. */
++export function storeIdFromToken(token: string) {
++  return /^vercel_blob_rw_([A-Za-z0-9]+)_/.exec(token)?.[1] ?? null;
++}
++
++export type BlobFailure = "token" | "access-mode" | "store-missing" | "store-suspended" | "blob";
++
++/** Turns a Vercel Blob SDK error into a reason the editor can explain to the user. */
++export function classifyBlobError(error: unknown): BlobFailure {
++  const name = error instanceof Error ? error.constructor.name : "";
++  const message = error instanceof Error ? error.message : String(error);
++  if (name === "BlobStoreNotFoundError") return "store-missing";
++  if (name === "BlobStoreSuspendedError") return "store-suspended";
++  if (/\b(private|public)\b/i.test(message) && /access|store/i.test(message)) return "access-mode";
++  if (name === "BlobAccessError") return "token";
++  return "blob";
++}

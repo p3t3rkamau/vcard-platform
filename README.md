@@ -72,7 +72,7 @@ This lets you register and sign in locally before configuring an email provider.
 1. Open your Vercel project and go to **Storage**.
 2. Create a **Blob** store and connect it to this project.
 3. Enable the store for the environments you use.
-4. Ensure the read-write token of the **public** store is present as `BLOB_READ_WRITE_TOKEN` (Vercel adds it when you connect the store; `VCARD_BLOB_READ_WRITE_TOKEN` and `VC_BLOB_READ_WRITE_TOKEN` also work) in local `.env` and in Vercel Environment Variables. Redeploy after adding it.
+4. Add the read-write token of the **public** store. Vercel names it `<PREFIX>_READ_WRITE_TOKEN` after the prefix you chose when connecting the store; the app accepts `VC_READ_WRITE_TOKEN`, `VCARD_READ_WRITE_TOKEN`, `VC_BLOB_READ_WRITE_TOKEN`, `VCARD_BLOB_READ_WRITE_TOKEN` and (last) `BLOB_READ_WRITE_TOKEN`; the first one that is set is used. Redeploy after changing it. To verify, sign in as an admin (`ADMIN_EMAILS`) and open `/api/admin/blob-check`.
 
 Profile photos, cover images and company logos accept JPG, PNG and WebP files up to 4 MB. Uploads are resized and re-encoded to WebP on the server, which also strips EXIF metadata (such as GPS location) from photos.
 

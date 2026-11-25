@@ -1,5 +1,5 @@
 import { del, put } from "@vercel/blob";
-import { getBlobToken } from "@/lib/blob";
+import { classifyBlobError, getBlobConfig } from "@/lib/blob";
 import sharp from "sharp";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -98,11 +98,12 @@ export async function POST(request: Request, { params }: RouteProps) {
     return backToEditor(request, cardId, "invalid-file", mediaType);
   }
 
-  const blobToken = getBlobToken();
-  if (!blobToken) {
-    console.error("[card-media-upload] No Blob token is configured (BLOB_READ_WRITE_TOKEN / VCARD_BLOB_READ_WRITE_TOKEN / VC_BLOB_READ_WRITE_TOKEN).");
+  const blobConfig = getBlobConfig();
+  if (!blobConfig) {
+    console.error("[card-media-upload] No Blob token is configured (VC_READ_WRITE_TOKEN, VCARD_READ_WRITE_TOKEN, ... BLOB_READ_WRITE_TOKEN).");
     return backToEditor(request, cardId, "not-configured", mediaType);
   }
+  const blobToken = blobConfig.token;
 
   const pathname = "vcard/" + session.user.id + "/" + card.id + "/" + mediaType.toLowerCase() + ".webp";
   let uploadedUrl: string | null = null;
@@ -153,14 +154,15 @@ export async function POST(request: Request, { params }: RouteProps) {
 
     return backToEditor(request, cardId, "uploaded", mediaType);
   } catch (error) {
-    console.error("[card-media-upload] Failed during " + failureStage, error);
+    console.error("[card-media-upload] Failed during " + failureStage + " using " + blobConfig.source, error);
     if (uploadedUrl) {
       await del(uploadedUrl, { token: blobToken }).catch(() => undefined);
     }
     const editorUrl = new URL("/dashboard/cards/" + cardId + "/edit", request.url);
     editorUrl.searchParams.set("media", "failed");
     editorUrl.searchParams.set("mediaType", mediaType);
-    editorUrl.searchParams.set("reason", failureStage);
+    // For storage failures, say *why* (wrong token, private store, ...) instead of one vague message.
+    editorUrl.searchParams.set("reason", failureStage === "blob" ? classifyBlobError(error) : failureStage);
     return NextResponse.redirect(editorUrl, 303);
   }
 }
