@@ -20,7 +20,8 @@ export default function HomePage() {
     <main className={styles.page}>
       <header className={styles.nav}>
         <Link className={styles.brand} href="/">VCARD PLATFORM</Link>
-        <nav aria-label="Account">
+        <nav aria-label="Main">
+          <Link href="/pricing">Pricing</Link>
           <Link href="/login">Sign in</Link>
         </nav>
       </header>

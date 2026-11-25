@@ -1,0 +1,163 @@
+.page {
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  padding: 20px clamp(18px, 4vw, 32px) 36px;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0 12px;
+
+  nav { display: flex; gap: 4px; }
+  nav a {
+    padding: 10px 14px;
+    border-radius: 10px;
+    color: var(--color-muted);
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    &:hover { background: #eef1f7; color: var(--color-text); }
+    &[aria-current="page"] { color: var(--color-text); }
+  }
+}
+.brand { color: var(--color-text); font-size: 13px; font-weight: 800; letter-spacing: 0.12em; text-decoration: none; }
+
+.hero {
+  padding: clamp(24px, 6vw, 56px) 0 18px;
+  text-align: center;
+
+  h1 { margin: 14px 0 12px; font-size: clamp(2rem, 6vw, 3.4rem); letter-spacing: -0.055em; line-height: 1.06; }
+  p { max-width: 540px; margin: 0 auto; color: var(--color-muted); font-size: 1.05rem; line-height: 1.7; }
+}
+.eyebrow { color: var(--color-primary); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.13em; }
+
+.notice {
+  width: fit-content;
+  max-width: 100%;
+  margin: 14px auto 0;
+  padding: 9px 16px;
+  border: 1px solid #fedf89;
+  border-radius: 999px;
+  background: #fffaeb;
+  color: #93370d;
+  font-size: 13px;
+  text-align: center;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px 22px;
+  margin: 26px 0 28px;
+}
+.segment {
+  display: inline-flex;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  background: var(--color-surface);
+
+  button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 18px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--color-muted);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  }
+}
+.segmentOn { background: var(--color-primary) !important; color: #fff !important; }
+.save { padding: 3px 8px; border-radius: 999px; background: #d1fadf; color: #067647; font-size: 11px; font-weight: 800; }
+.segmentOn .save { background: rgba(255, 255, 255, 0.22); color: #fff; }
+
+.plans { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); align-items: stretch; }
+.plan, .planPopular {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 24px 26px;
+  border: 1px solid var(--color-border);
+  border-radius: 22px;
+  background: var(--color-surface);
+
+  h3 { margin: 0; font-size: 1.15rem; letter-spacing: -0.02em; }
+  ul { display: grid; gap: 11px; margin: 22px 0 0; padding: 20px 0 0; border-top: 1px solid var(--color-border); list-style: none; }
+  li { display: flex; align-items: flex-start; gap: 10px; color: #344054; font-size: 14px; line-height: 1.45; }
+  li svg { flex: none; margin-top: 2px; color: var(--color-primary); }
+}
+.planPopular { border: 2px solid var(--color-primary); box-shadow: 0 22px 60px rgb(49 87 213 / 16%); }
+.badge {
+  position: absolute;
+  top: -13px;
+  left: 24px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.tagline { min-height: 42px; margin: 6px 0 16px; color: var(--color-muted); font-size: 14px; line-height: 1.5; }
+.price { display: flex; align-items: baseline; gap: 4px; margin: 0; strong { font-size: 2rem; letter-spacing: -0.045em; } span { color: var(--color-muted); font-size: 14px; } }
+.priceSub { min-height: 36px; margin: 4px 0 18px; color: var(--color-muted); font-size: 12.5px; line-height: 1.5; }
+.cta, .ctaPrimary {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 750;
+  text-decoration: none;
+}
+.cta { border: 1px solid #c8cfdd; background: var(--color-surface); color: var(--color-text); &:hover { border-color: var(--color-primary); color: var(--color-primary); } }
+.ctaPrimary { background: var(--color-primary); color: #fff; box-shadow: 0 10px 26px rgb(49 87 213 / 28%); &:hover { background: #2446b8; } }
+
+.compare {
+  margin-top: 44px;
+  h2 { margin: 0 0 16px; font-size: clamp(1.4rem, 4vw, 1.9rem); letter-spacing: -0.04em; }
+}
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  background: var(--color-surface);
+
+  /* Element selectors live under .tableWrap: CSS Modules requires every selector to contain a local class. */
+  table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 14px 16px; border-bottom: 1px solid #eef0f4; text-align: center; vertical-align: middle; }
+  thead th { background: #f9fafb; color: var(--color-text); font-size: 14px; font-weight: 800; }
+  tbody th { position: sticky; left: 0; z-index: 1; min-width: 210px; background: var(--color-surface); font-weight: 600; text-align: left; }
+  tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
+  .popularCol { background: #f5f8ff; }
+
+  /* Phones: keep all plan columns on screen instead of pushing them off to the right. */
+  @media (max-width: 560px) {
+    table { min-width: 0; font-size: 12.5px; }
+    th, td { padding: 11px 6px; }
+    thead th { font-size: 12.5px; }
+    tbody th { min-width: 0; width: 38%; padding-left: 12px; line-height: 1.35; }
+  }
+}
+.yes { color: #12b76a; }
+.no { color: #c5cad6; }
+.soon { margin-left: 8px; padding: 2px 7px; border-radius: 999px; background: #eef2ff; color: var(--color-primary); font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.footer { margin-top: auto; padding-top: 34px; color: var(--color-muted); font-size: 13px; text-align: center; p { margin: 0 0 10px; } a { color: var(--color-primary); font-weight: 700; text-decoration: none; } }

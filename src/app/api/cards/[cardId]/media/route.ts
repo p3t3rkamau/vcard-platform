@@ -1,4 +1,5 @@
 import { del, put } from "@vercel/blob";
+import { getBlobToken } from "@/lib/blob";
 import sharp from "sharp";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -97,9 +98,9 @@ export async function POST(request: Request, { params }: RouteProps) {
     return backToEditor(request, cardId, "invalid-file", mediaType);
   }
 
-  const blobToken = process.env.VC_BLOB_READ_WRITE_TOKEN;
+  const blobToken = getBlobToken();
   if (!blobToken) {
-    console.error("[card-media-upload] VC_BLOB_READ_WRITE_TOKEN is not configured.");
+    console.error("[card-media-upload] No Blob token is configured (BLOB_READ_WRITE_TOKEN / VCARD_BLOB_READ_WRITE_TOKEN / VC_BLOB_READ_WRITE_TOKEN).");
     return backToEditor(request, cardId, "not-configured", mediaType);
   }
 
@@ -147,14 +148,14 @@ export async function POST(request: Request, { params }: RouteProps) {
     });
 
     if (oldMedia.length) {
-      await del(oldMedia.map((item) => item.publicUrl)).catch(() => undefined);
+      await del(oldMedia.map((item) => item.publicUrl), { token: blobToken }).catch(() => undefined);
     }
 
     return backToEditor(request, cardId, "uploaded", mediaType);
   } catch (error) {
     console.error("[card-media-upload] Failed during " + failureStage, error);
     if (uploadedUrl) {
-      await del(uploadedUrl).catch(() => undefined);
+      await del(uploadedUrl, { token: blobToken }).catch(() => undefined);
     }
     const editorUrl = new URL("/dashboard/cards/" + cardId + "/edit", request.url);
     editorUrl.searchParams.set("media", "failed");

@@ -63,9 +63,9 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
         {query.social === "added" && <p className={formStyles.success}>Social link added.</p>}
         {query.template === "updated" && <p className={formStyles.success}>Your card design has been updated.</p>}
         {query.media === "uploaded" && <p className={formStyles.success}>{query.mediaType?.replaceAll("_", " ").toLowerCase()} uploaded successfully.</p>}
-        {query.media === "not-configured" && <p className={formStyles.error}>The public image store is not connected. Create a Public Vercel Blob store and add its token as VCARD_BLOB_READ_WRITE_TOKEN in this environment.</p>}
+        {query.media === "not-configured" && <p className={formStyles.error}>The public image store is not connected yet. Create a Public Vercel Blob store, connect it to this project and add its read-write token as BLOB_READ_WRITE_TOKEN, then redeploy.</p>}
         {query.media === "invalid-file" && <p className={formStyles.error}>Choose a JPG, PNG or WebP image smaller than 4 MB.</p>}
-        {query.media === "failed" && query.reason === "blob" && <p className={formStyles.error}>The public image store rejected the upload. Confirm that VCARD_BLOB_READ_WRITE_TOKEN belongs to the new Public Blob store. The server log contains the exact error.</p>}
+        {query.media === "failed" && query.reason === "blob" && <p className={formStyles.error}>The public image store rejected the upload. Confirm that the Blob token belongs to a Public store (a Private store rejects public uploads). The server log contains the exact error.</p>}
         {query.media === "failed" && query.reason === "database" && <p className={formStyles.error}>The image reached Blob storage, but the profile could not be updated in the database. Check the Neon connection and server logs.</p>}
         {query.media === "failed" && !query.reason && <p className={formStyles.error}>The image could not be uploaded. Check the server logs for the upload error.</p>}
         {query.media === "rate-limited" && <p className={formStyles.error}>You have uploaded too many images recently. Please try again later.</p>}

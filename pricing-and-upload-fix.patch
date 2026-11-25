@@ -1,0 +1,564 @@
+diff --git a/.env.example b/.env.example
+index c5334b7..0cea4ae 100644
+--- a/.env.example
++++ b/.env.example
+@@ -15,8 +15,8 @@ AUTH_SECRET=""
+ # Auth.js v5 on Vercel infers the host from request headers; do not set AUTH_URL there.
+ 
+ # Vercel Blob (server-side only). Use the token of a *Public* Blob store: card images are public.
+-# (The upload route reads VCARD_BLOB_READ_WRITE_TOKEN, not the default BLOB_READ_WRITE_TOKEN.)
+-VCARD_BLOB_READ_WRITE_TOKEN=""
++# Accepted names, first one set wins: VCARD_BLOB_READ_WRITE_TOKEN, VC_BLOB_READ_WRITE_TOKEN, BLOB_READ_WRITE_TOKEN.
++BLOB_READ_WRITE_TOKEN=""
+ 
+ # SMTP email delivery (required for registration verification and password resets)
+ SMTP_HOST=""
+diff --git a/README.md b/README.md
+index 4d5cdab..a0b8d50 100644
+--- a/README.md
++++ b/README.md
+@@ -72,7 +72,7 @@ This lets you register and sign in locally before configuring an email provider.
+ 1. Open your Vercel project and go to **Storage**.
+ 2. Create a **Blob** store and connect it to this project.
+ 3. Enable the store for the environments you use.
+-4. Ensure `VCARD_BLOB_READ_WRITE_TOKEN` (the token of the **public** store) is present in local `.env` and Vercel Environment Variables.
++4. Ensure the read-write token of the **public** store is present as `BLOB_READ_WRITE_TOKEN` (Vercel adds it when you connect the store; `VCARD_BLOB_READ_WRITE_TOKEN` and `VC_BLOB_READ_WRITE_TOKEN` also work) in local `.env` and in Vercel Environment Variables. Redeploy after adding it.
+ 
+ Profile photos, cover images and company logos accept JPG, PNG and WebP files up to 4 MB. Uploads are resized and re-encoded to WebP on the server, which also strips EXIF metadata (such as GPS location) from photos.
+ 
+diff --git a/src/app/api/cards/[cardId]/media/route.ts b/src/app/api/cards/[cardId]/media/route.ts
+index 2c90c7b..adbcbbe 100644
+--- a/src/app/api/cards/[cardId]/media/route.ts
++++ b/src/app/api/cards/[cardId]/media/route.ts
+@@ -1,4 +1,5 @@
+ import { del, put } from "@vercel/blob";
++import { getBlobToken } from "@/lib/blob";
+ import sharp from "sharp";
+ import { auth } from "@/auth";
+ import { prisma } from "@/lib/prisma";
+@@ -97,9 +98,9 @@ export async function POST(request: Request, { params }: RouteProps) {
+     return backToEditor(request, cardId, "invalid-file", mediaType);
+   }
+ 
+-  const blobToken = process.env.VC_BLOB_READ_WRITE_TOKEN;
++  const blobToken = getBlobToken();
+   if (!blobToken) {
+-    console.error("[card-media-upload] VC_BLOB_READ_WRITE_TOKEN is not configured.");
++    console.error("[card-media-upload] No Blob token is configured (BLOB_READ_WRITE_TOKEN / VCARD_BLOB_READ_WRITE_TOKEN / VC_BLOB_READ_WRITE_TOKEN).");
+     return backToEditor(request, cardId, "not-configured", mediaType);
+   }
+ 
+@@ -147,14 +148,14 @@ export async function POST(request: Request, { params }: RouteProps) {
+     });
+ 
+     if (oldMedia.length) {
+-      await del(oldMedia.map((item) => item.publicUrl)).catch(() => undefined);
++      await del(oldMedia.map((item) => item.publicUrl), { token: blobToken }).catch(() => undefined);
+     }
+ 
+     return backToEditor(request, cardId, "uploaded", mediaType);
+   } catch (error) {
+     console.error("[card-media-upload] Failed during " + failureStage, error);
+     if (uploadedUrl) {
+-      await del(uploadedUrl).catch(() => undefined);
++      await del(uploadedUrl, { token: blobToken }).catch(() => undefined);
+     }
+     const editorUrl = new URL("/dashboard/cards/" + cardId + "/edit", request.url);
+     editorUrl.searchParams.set("media", "failed");
+diff --git a/src/app/dashboard/cards/[cardId]/edit/page.tsx b/src/app/dashboard/cards/[cardId]/edit/page.tsx
+index 565830c..2ff6dab 100644
+--- a/src/app/dashboard/cards/[cardId]/edit/page.tsx
++++ b/src/app/dashboard/cards/[cardId]/edit/page.tsx
+@@ -63,9 +63,9 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
+         {query.social === "added" && <p className={formStyles.success}>Social link added.</p>}
+         {query.template === "updated" && <p className={formStyles.success}>Your card design has been updated.</p>}
+         {query.media === "uploaded" && <p className={formStyles.success}>{query.mediaType?.replaceAll("_", " ").toLowerCase()} uploaded successfully.</p>}
+-        {query.media === "not-configured" && <p className={formStyles.error}>The public image store is not connected. Create a Public Vercel Blob store and add its token as VCARD_BLOB_READ_WRITE_TOKEN in this environment.</p>}
++        {query.media === "not-configured" && <p className={formStyles.error}>The public image store is not connected yet. Create a Public Vercel Blob store, connect it to this project and add its read-write token as BLOB_READ_WRITE_TOKEN, then redeploy.</p>}
+         {query.media === "invalid-file" && <p className={formStyles.error}>Choose a JPG, PNG or WebP image smaller than 4 MB.</p>}
+-        {query.media === "failed" && query.reason === "blob" && <p className={formStyles.error}>The public image store rejected the upload. Confirm that VCARD_BLOB_READ_WRITE_TOKEN belongs to the new Public Blob store. The server log contains the exact error.</p>}
++        {query.media === "failed" && query.reason === "blob" && <p className={formStyles.error}>The public image store rejected the upload. Confirm that the Blob token belongs to a Public store (a Private store rejects public uploads). The server log contains the exact error.</p>}
+         {query.media === "failed" && query.reason === "database" && <p className={formStyles.error}>The image reached Blob storage, but the profile could not be updated in the database. Check the Neon connection and server logs.</p>}
+         {query.media === "failed" && !query.reason && <p className={formStyles.error}>The image could not be uploaded. Check the server logs for the upload error.</p>}
+         {query.media === "rate-limited" && <p className={formStyles.error}>You have uploaded too many images recently. Please try again later.</p>}
+diff --git a/src/app/page.tsx b/src/app/page.tsx
+index 21167f8..9df48d6 100644
+--- a/src/app/page.tsx
++++ b/src/app/page.tsx
+@@ -20,7 +20,8 @@ export default function HomePage() {
+     <main className={styles.page}>
+       <header className={styles.nav}>
+         <Link className={styles.brand} href="/">VCARD PLATFORM</Link>
+-        <nav aria-label="Account">
++        <nav aria-label="Main">
++          <Link href="/pricing">Pricing</Link>
+           <Link href="/login">Sign in</Link>
+         </nav>
+       </header>
+diff --git a/src/app/pricing/PricingPlans.tsx b/src/app/pricing/PricingPlans.tsx
+new file mode 100644
+index 0000000..4de7157
+--- /dev/null
++++ b/src/app/pricing/PricingPlans.tsx
+@@ -0,0 +1,102 @@
++"use client";
++
++import Link from "next/link";
++import { useState } from "react";
++import { ANNUAL_MONTHS_PAID, ENTERPRISE_CONTACT, FEATURES, PLANS, priceFor, type Audience, type Billing } from "./plans";
++import styles from "./pricing.module.scss";
++
++const audiences: Array<{ id: Audience; label: string }> = [
++  { id: "individual", label: "Individuals" },
++  { id: "organisation", label: "Organisations" },
++];
++
++function planHref(planId: string, billing: Billing) {
++  if (planId === "free") return "/register";
++  if (planId === "enterprise") return ENTERPRISE_CONTACT;
++  return "/register?plan=" + planId + "&billing=" + billing;
++}
++
++function Check({ on }: { on: boolean }) {
++  return on ? (
++    <svg className={styles.yes} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" role="img" aria-label="Included"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
++  ) : (
++    <span className={styles.no} role="img" aria-label="Not included">—</span>
++  );
++}
++
++export default function PricingPlans() {
++  const [audience, setAudience] = useState<Audience>("individual");
++  const [billing, setBilling] = useState<Billing>("annual");
++  const plans = PLANS.filter((plan) => plan.audience === audience);
++  const rows = FEATURES[audience];
++  const freeMonths = 12 - ANNUAL_MONTHS_PAID;
++
++  return (
++    <>
++      <div className={styles.controls}>
++        <div className={styles.segment} role="radiogroup" aria-label="Who is this for?">
++          {audiences.map((option) => (
++            <button key={option.id} type="button" role="radio" aria-checked={audience === option.id} className={audience === option.id ? styles.segmentOn : undefined} onClick={() => setAudience(option.id)}>
++              {option.label}
++            </button>
++          ))}
++        </div>
++        <div className={styles.segment} role="radiogroup" aria-label="Billing period">
++          <button type="button" role="radio" aria-checked={billing === "monthly"} className={billing === "monthly" ? styles.segmentOn : undefined} onClick={() => setBilling("monthly")}>Monthly</button>
++          <button type="button" role="radio" aria-checked={billing === "annual"} className={billing === "annual" ? styles.segmentOn : undefined} onClick={() => setBilling("annual")}>
++            Annual <span className={styles.save}>{freeMonths} months free</span>
++          </button>
++        </div>
++      </div>
++
++      <div className={styles.plans}>
++        {plans.map((plan) => {
++          const price = priceFor(plan, billing);
++          const external = plan.id === "enterprise";
++          const Cta = external ? "a" : Link;
++          return (
++            <article key={plan.id} className={plan.popular ? styles.planPopular : styles.plan}>
++              {plan.popular && <span className={styles.badge}>Most popular</span>}
++              <h3>{plan.name}</h3>
++              <p className={styles.tagline}>{plan.tagline}</p>
++              <p className={styles.price}><strong>{price.main}</strong>{price.unit && <span> {price.unit}</span>}</p>
++              <p className={styles.priceSub}>{price.sub}</p>
++              <Cta className={plan.popular ? styles.ctaPrimary : styles.cta} href={planHref(plan.id, billing)}>{plan.cta}</Cta>
++              <ul>
++                {plan.highlights.map((item) => (
++                  <li key={item}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>{item}</li>
++                ))}
++              </ul>
++            </article>
++          );
++        })}
++      </div>
++
++      <section className={styles.compare} aria-labelledby="compare-heading">
++        <h2 id="compare-heading">Compare plans</h2>
++        <div className={styles.tableWrap}>
++          <table>
++            <thead>
++              <tr>
++                <th scope="col"><span className={styles.srOnly}>Feature</span></th>
++                {plans.map((plan) => <th key={plan.id} scope="col" className={plan.popular ? styles.popularCol : undefined}>{plan.name}</th>)}
++              </tr>
++            </thead>
++            <tbody>
++              {rows.map((row) => (
++                <tr key={row.label}>
++                  <th scope="row">{row.label}{row.soon && <span className={styles.soon}>Soon</span>}</th>
++                  {row.values.map((value, index) => (
++                    <td key={plans[index].id} className={plans[index].popular ? styles.popularCol : undefined}>
++                      {typeof value === "string" ? value : <Check on={value} />}
++                    </td>
++                  ))}
++                </tr>
++              ))}
++            </tbody>
++          </table>
++        </div>
++      </section>
++    </>
++  );
++}
+diff --git a/src/app/pricing/page.tsx b/src/app/pricing/page.tsx
+new file mode 100644
+index 0000000..c272663
+--- /dev/null
++++ b/src/app/pricing/page.tsx
+@@ -0,0 +1,44 @@
++import type { Metadata } from "next";
++import Link from "next/link";
++import PricingPlans from "./PricingPlans";
++import { SHOW_PREVIEW_NOTICE } from "./plans";
++import styles from "./pricing.module.scss";
++
++export const metadata: Metadata = {
++  title: "Pricing",
++  description: "Simple digital business card pricing in Kenyan shillings, for individuals and organisations. Start free.",
++  alternates: { canonical: "/pricing" },
++};
++
++export default function PricingPage() {
++  return (
++    <main className={styles.page}>
++      <header className={styles.nav}>
++        <Link className={styles.brand} href="/">VCARD PLATFORM</Link>
++        <nav aria-label="Main">
++          <Link href="/pricing" aria-current="page">Pricing</Link>
++          <Link href="/login">Sign in</Link>
++        </nav>
++      </header>
++
++      <section className={styles.hero}>
++        <span className={styles.eyebrow}>PRICING · KENYAN SHILLINGS</span>
++        <h1>Simple pricing that grows with you</h1>
++        <p>Start free. Upgrade when you need more cards, a branded QR code, or a whole team on the same page.</p>
++      </section>
++
++      {SHOW_PREVIEW_NOTICE && (
++        <p className={styles.notice} role="note">
++          <strong>Preview pricing.</strong> Prices and plan limits are placeholders while billing is being set up.
++        </p>
++      )}
++
++      <PricingPlans />
++
++      <footer className={styles.footer}>
++        <p>All prices are in Kenyan shillings (KSh). Annual plans are billed once a year.</p>
++        <Link href="/">← Back to home</Link>
++      </footer>
++    </main>
++  );
++}
+diff --git a/src/app/pricing/plans.ts b/src/app/pricing/plans.ts
+new file mode 100644
+index 0000000..08e50ee
+--- /dev/null
++++ b/src/app/pricing/plans.ts
+@@ -0,0 +1,99 @@
++/**
++ * Pricing data. PLACEHOLDER numbers: edit freely, the page renders whatever is here.
++ * Nothing in the app enforces these limits yet; this page is a preview of the plan structure.
++ */
++export type Audience = "individual" | "organisation";
++export type Billing = "monthly" | "annual";
++/** true = included, false = not included, string = included with this limit/description */
++export type Cell = boolean | string;
++
++export type Plan = {
++  id: string;
++  audience: Audience;
++  name: string;
++  tagline: string;
++  /** KSh per month when billed monthly. null = "contact us" */
++  monthly: number | null;
++  popular?: boolean;
++  cta: string;
++  highlights: string[];
++};
++
++export type FeatureRow = {
++  label: string;
++  /** Not built yet: shown with a "Soon" badge so the page never over-promises. */
++  soon?: boolean;
++  /** One cell per plan of the audience, in plan order. */
++  values: Cell[];
++};
++
++/** Annual billing = this many months paid per year (10 = "2 months free"). */
++export const ANNUAL_MONTHS_PAID = 10;
++export const SHOW_PREVIEW_NOTICE = true;
++/** TODO: replace with your real sales address (or a contact page). */
++export const ENTERPRISE_CONTACT = "mailto:hello@example.com?subject=vCard%20Platform%20Enterprise";
++
++export const PLANS: Plan[] = [
++  { id: "free", audience: "individual", name: "Free", tagline: "Try it and share your first card.", monthly: 0, cta: "Start free",
++    highlights: ["1 digital card", "2 starter templates", "Save-to-contacts button", "Basic QR code"] },
++  { id: "pro", audience: "individual", name: "Pro", tagline: "For professionals who network every week.", monthly: 450, popular: true, cta: "Choose Pro",
++    highlights: ["3 digital cards", "All 8 templates", "Custom profile address", "Branded QR code with your logo", "Full analytics"] },
++  { id: "executive", audience: "individual", name: "Executive", tagline: "Make a standout first impression.", monthly: 900, cta: "Choose Executive",
++    highlights: ["10 digital cards", "Everything in Pro", "QR frames and call-to-action text", "Country and source insights", "Priority support"] },
++
++  { id: "team", audience: "organisation", name: "Team", tagline: "Small teams that want matching cards.", monthly: 3000, cta: "Choose Team",
++    highlights: ["Up to 10 team members", "Up to 10 cards", "Shared workspace with roles", "All 8 templates"] },
++  { id: "business", audience: "organisation", name: "Business", tagline: "Growing companies with brand rules.", monthly: 9000, popular: true, cta: "Choose Business",
++    highlights: ["Up to 50 team members", "Up to 50 cards", "Organisation-wide analytics", "Bulk import and brand-locked templates"] },
++  { id: "enterprise", audience: "organisation", name: "Enterprise", tagline: "Large organisations and custom needs.", monthly: null, cta: "Talk to us",
++    highlights: ["Unlimited members and cards", "Custom domain and SSO", "Custom card design and onboarding", "Dedicated account manager"] },
++];
++
++export const FEATURES: Record<Audience, FeatureRow[]> = {
++  individual: [
++    { label: "Digital business cards", values: ["1", "3", "10"] },
++    { label: "Card templates", values: ["2 starter", "All 8", "All 8"] },
++    { label: "Profile photo, cover image and company logo", values: ["Photo only", true, true] },
++    { label: "Social links per card", values: ["3", "10", "15"] },
++    { label: "Custom profile address (/p/your-name)", values: [false, true, true] },
++    { label: "Save-to-contacts (.vcf) button", values: [true, true, true] },
++    { label: "QR code with your colours and logo", values: [false, true, true] },
++    { label: "QR frames and call-to-action text", values: [false, false, true] },
++    { label: "Profile views, QR scans, saves and clicks", values: ["Views only", true, true] },
++    { label: "Country and referrer breakdown", soon: true, values: [false, false, true] },
++    { label: "Remove “Create yours free” footer", soon: true, values: [false, false, true] },
++    { label: "Support", values: ["Help centre", "Email", "Priority"] },
++  ],
++  organisation: [
++    { label: "Team members", values: ["Up to 10", "Up to 50", "Unlimited"] },
++    { label: "Digital business cards", values: ["Up to 10", "Up to 50", "Unlimited"] },
++    { label: "Shared workspace with Owner, Admin, Member and Viewer roles", values: [true, true, true] },
++    { label: "All 8 card templates", values: [true, true, true] },
++    { label: "Per-card analytics", values: [true, true, true] },
++    { label: "Organisation-wide analytics", soon: true, values: [false, true, true] },
++    { label: "Bulk card import from CSV", soon: true, values: [false, true, true] },
++    { label: "Brand-locked templates", soon: true, values: [false, true, true] },
++    { label: "Remove platform branding", soon: true, values: [false, true, true] },
++    { label: "Custom domain", soon: true, values: [false, false, true] },
++    { label: "Single sign-on (SSO)", soon: true, values: [false, false, true] },
++    { label: "Custom card design and onboarding", values: [false, false, true] },
++    { label: "Support", values: ["Email", "Priority email and WhatsApp", "Dedicated manager"] },
++  ],
++};
++
++export function formatKsh(amount: number) {
++  return "KSh " + amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
++}
++
++/** What to show for one plan under the chosen billing period. */
++export function priceFor(plan: Plan, billing: Billing) {
++  if (plan.monthly === null) return { main: "Custom", sub: "Tailored to your organisation", unit: "" };
++  if (plan.monthly === 0) return { main: "KSh 0", sub: "Free forever", unit: "" };
++  if (billing === "monthly") return { main: formatKsh(plan.monthly), unit: "/ month", sub: "Billed monthly" };
++  const yearly = plan.monthly * ANNUAL_MONTHS_PAID;
++  return {
++    main: formatKsh(Math.round(yearly / 12)),
++    unit: "/ month",
++    sub: formatKsh(yearly) + " billed yearly · save " + formatKsh(plan.monthly * (12 - ANNUAL_MONTHS_PAID)),
++  };
++}
+diff --git a/src/app/pricing/pricing.module.scss b/src/app/pricing/pricing.module.scss
+new file mode 100644
+index 0000000..096e919
+--- /dev/null
++++ b/src/app/pricing/pricing.module.scss
+@@ -0,0 +1,163 @@
++.page {
++  display: flex;
++  min-height: 100svh;
++  flex-direction: column;
++  width: min(1080px, 100%);
++  margin: 0 auto;
++  padding: 20px clamp(18px, 4vw, 32px) 36px;
++}
++
++.nav {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  padding: 6px 0 12px;
++
++  nav { display: flex; gap: 4px; }
++  nav a {
++    padding: 10px 14px;
++    border-radius: 10px;
++    color: var(--color-muted);
++    font-size: 14px;
++    font-weight: 700;
++    text-decoration: none;
++    &:hover { background: #eef1f7; color: var(--color-text); }
++    &[aria-current="page"] { color: var(--color-text); }
++  }
++}
++.brand { color: var(--color-text); font-size: 13px; font-weight: 800; letter-spacing: 0.12em; text-decoration: none; }
++
++.hero {
++  padding: clamp(24px, 6vw, 56px) 0 18px;
++  text-align: center;
++
++  h1 { margin: 14px 0 12px; font-size: clamp(2rem, 6vw, 3.4rem); letter-spacing: -0.055em; line-height: 1.06; }
++  p { max-width: 540px; margin: 0 auto; color: var(--color-muted); font-size: 1.05rem; line-height: 1.7; }
++}
++.eyebrow { color: var(--color-primary); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.13em; }
++
++.notice {
++  width: fit-content;
++  max-width: 100%;
++  margin: 14px auto 0;
++  padding: 9px 16px;
++  border: 1px solid #fedf89;
++  border-radius: 999px;
++  background: #fffaeb;
++  color: #93370d;
++  font-size: 13px;
++  text-align: center;
++}
++
++.controls {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: center;
++  justify-content: center;
++  gap: 14px 22px;
++  margin: 26px 0 28px;
++}
++.segment {
++  display: inline-flex;
++  padding: 4px;
++  border: 1px solid var(--color-border);
++  border-radius: 14px;
++  background: var(--color-surface);
++
++  button {
++    display: inline-flex;
++    align-items: center;
++    gap: 8px;
++    min-height: 42px;
++    padding: 0 18px;
++    border: 0;
++    border-radius: 10px;
++    background: transparent;
++    color: var(--color-muted);
++    font-size: 14px;
++    font-weight: 700;
++    cursor: pointer;
++    &:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
++  }
++}
++.segmentOn { background: var(--color-primary) !important; color: #fff !important; }
++.save { padding: 3px 8px; border-radius: 999px; background: #d1fadf; color: #067647; font-size: 11px; font-weight: 800; }
++.segmentOn .save { background: rgba(255, 255, 255, 0.22); color: #fff; }
++
++.plans { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); align-items: stretch; }
++.plan, .planPopular {
++  position: relative;
++  display: flex;
++  flex-direction: column;
++  padding: 28px 24px 26px;
++  border: 1px solid var(--color-border);
++  border-radius: 22px;
++  background: var(--color-surface);
++
++  h3 { margin: 0; font-size: 1.15rem; letter-spacing: -0.02em; }
++  ul { display: grid; gap: 11px; margin: 22px 0 0; padding: 20px 0 0; border-top: 1px solid var(--color-border); list-style: none; }
++  li { display: flex; align-items: flex-start; gap: 10px; color: #344054; font-size: 14px; line-height: 1.45; }
++  li svg { flex: none; margin-top: 2px; color: var(--color-primary); }
++}
++.planPopular { border: 2px solid var(--color-primary); box-shadow: 0 22px 60px rgb(49 87 213 / 16%); }
++.badge {
++  position: absolute;
++  top: -13px;
++  left: 24px;
++  padding: 5px 12px;
++  border-radius: 999px;
++  background: var(--color-primary);
++  color: #fff;
++  font-size: 11px;
++  font-weight: 800;
++  letter-spacing: 0.06em;
++  text-transform: uppercase;
++}
++.tagline { min-height: 42px; margin: 6px 0 16px; color: var(--color-muted); font-size: 14px; line-height: 1.5; }
++.price { display: flex; align-items: baseline; gap: 4px; margin: 0; strong { font-size: 2rem; letter-spacing: -0.045em; } span { color: var(--color-muted); font-size: 14px; } }
++.priceSub { min-height: 36px; margin: 4px 0 18px; color: var(--color-muted); font-size: 12.5px; line-height: 1.5; }
++.cta, .ctaPrimary {
++  display: inline-flex;
++  min-height: 48px;
++  align-items: center;
++  justify-content: center;
++  border-radius: 12px;
++  font-size: 15px;
++  font-weight: 750;
++  text-decoration: none;
++}
++.cta { border: 1px solid #c8cfdd; background: var(--color-surface); color: var(--color-text); &:hover { border-color: var(--color-primary); color: var(--color-primary); } }
++.ctaPrimary { background: var(--color-primary); color: #fff; box-shadow: 0 10px 26px rgb(49 87 213 / 28%); &:hover { background: #2446b8; } }
++
++.compare {
++  margin-top: 44px;
++  h2 { margin: 0 0 16px; font-size: clamp(1.4rem, 4vw, 1.9rem); letter-spacing: -0.04em; }
++}
++.tableWrap {
++  overflow-x: auto;
++  border: 1px solid var(--color-border);
++  border-radius: 18px;
++  background: var(--color-surface);
++
++  /* Element selectors live under .tableWrap: CSS Modules requires every selector to contain a local class. */
++  table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 14px; }
++  th, td { padding: 14px 16px; border-bottom: 1px solid #eef0f4; text-align: center; vertical-align: middle; }
++  thead th { background: #f9fafb; color: var(--color-text); font-size: 14px; font-weight: 800; }
++  tbody th { position: sticky; left: 0; z-index: 1; min-width: 210px; background: var(--color-surface); font-weight: 600; text-align: left; }
++  tbody tr:last-child th, tbody tr:last-child td { border-bottom: 0; }
++  .popularCol { background: #f5f8ff; }
++
++  /* Phones: keep all plan columns on screen instead of pushing them off to the right. */
++  @media (max-width: 560px) {
++    table { min-width: 0; font-size: 12.5px; }
++    th, td { padding: 11px 6px; }
++    thead th { font-size: 12.5px; }
++    tbody th { min-width: 0; width: 38%; padding-left: 12px; line-height: 1.35; }
++  }
++}
++.yes { color: #12b76a; }
++.no { color: #c5cad6; }
++.soon { margin-left: 8px; padding: 2px 7px; border-radius: 999px; background: #eef2ff; color: var(--color-primary); font-size: 10.5px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
++.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
++
++.footer { margin-top: auto; padding-top: 34px; color: var(--color-muted); font-size: 13px; text-align: center; p { margin: 0 0 10px; } a { color: var(--color-primary); font-weight: 700; text-decoration: none; } }
+diff --git a/src/app/sitemap.ts b/src/app/sitemap.ts
+index 1e966d9..d82ea2a 100644
+--- a/src/app/sitemap.ts
++++ b/src/app/sitemap.ts
+@@ -18,6 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+ 
+   return [
+     { url: base, changeFrequency: "monthly", priority: 1 },
++    { url: base + "/pricing", changeFrequency: "monthly", priority: 0.8 },
+     ...cards.map((card) => ({ url: base + "/p/" + card.slug, lastModified: card.updatedAt, changeFrequency: "monthly" as const, priority: 0.6 })),
+   ];
+ }
+diff --git a/src/lib/blob.ts b/src/lib/blob.ts
+new file mode 100644
+index 0000000..4b6ee2e
+--- /dev/null
++++ b/src/lib/blob.ts
+@@ -0,0 +1,17 @@
++/**
++ * Token for the PUBLIC Vercel Blob store that holds card images.
++ *
++ * Vercel names the variable after the prefix chosen when the store is connected, so accept the
++ * names this project has used, then Vercel's default. First one that is set wins.
++ */
++const TOKEN_VARIABLES = ["VCARD_BLOB_READ_WRITE_TOKEN", "VC_BLOB_READ_WRITE_TOKEN", "BLOB_READ_WRITE_TOKEN"] as const;
++
++export function getBlobToken() {
++  for (const name of TOKEN_VARIABLES) {
++    const value = process.env[name]?.trim();
++    if (value) return value;
++  }
++  return undefined;
++}
++
++export const BLOB_TOKEN_HELP = "Create a Public Vercel Blob store, connect it to this project and add its read-write token as BLOB_READ_WRITE_TOKEN (or VCARD_BLOB_READ_WRITE_TOKEN), then redeploy.";
