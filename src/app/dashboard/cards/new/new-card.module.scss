@@ -328,3 +328,28 @@
     line-height: 1.5;
   }
 }
+
+
+.recordDetails { display: grid; min-width: 0; gap: 4px; }
+.recordActions { display: flex; flex: none; align-items: center; gap: 5px; }
+.moveButton {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid #d8deea;
+  border-radius: 8px;
+  background: #fff;
+  color: #344054;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  &:hover:not(:disabled) { border-color: #3157d5; color: #3157d5; background: #f5f7ff; }
+  &:disabled { opacity: .35; cursor: not-allowed; }
+}
+@media (max-width: 480px) {
+  .record { align-items: flex-start; }
+  .recordActions { gap: 4px; }
+  .moveButton { width: 29px; height: 29px; }
+  .removeButton { min-height: 29px; padding: 0 8px; }
+}
