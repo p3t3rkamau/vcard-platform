@@ -429,6 +429,46 @@ export async function removeContactMethod(formData: FormData) {
   revalidatePath("/dashboard/cards/" + card.id + "/edit");
 }
 
+
+export async function moveContactMethod(formData: FormData) {
+  const userId = await requireUserId();
+  const cardId = String(formData.get("cardId") ?? "");
+  const methodId = String(formData.get("methodId") ?? "");
+  const direction = String(formData.get("direction") ?? "");
+
+  if (direction !== "up" && direction !== "down") redirect("/dashboard");
+  const card = await requireOwnedCard(cardId, userId);
+  if (!card) redirect("/dashboard");
+
+  const methods = await prisma.contactMethod.findMany({
+    where: { businessCardId: card.id },
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+    select: { id: true },
+  });
+  const currentIndex = methods.findIndex((method) => method.id === methodId);
+  if (currentIndex < 0) redirect("/dashboard/cards/" + card.id + "/edit");
+  const targetIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  if (targetIndex < 0 || targetIndex >= methods.length) {
+    redirect("/dashboard/cards/" + card.id + "/edit");
+  }
+
+  const reordered = [...methods];
+  [reordered[currentIndex], reordered[targetIndex]] = [reordered[targetIndex], reordered[currentIndex]];
+
+  await prisma.$transaction(
+    reordered.map((method, index) =>
+      prisma.contactMethod.update({
+        where: { id: method.id },
+        data: { sortOrder: index },
+      }),
+    ),
+  );
+
+  revalidatePath("/dashboard/cards/" + card.id + "/edit");
+  revalidatePath("/p/" + card.slug);
+  redirect("/dashboard/cards/" + card.id + "/edit?contact=reordered");
+}
+
 export async function addSocialLink(formData: FormData) {
   const userId = await requireUserId();
   const parsed = socialSchema.safeParse({
