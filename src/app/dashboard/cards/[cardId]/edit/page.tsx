@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { appBaseUrl } from "@/lib/http";
 import {
   addContactMethod,
+  moveContactMethod,
   addSocialLink,
   removeContactMethod,
   removeSocialLink,
@@ -60,6 +61,7 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
         {query.created === "1" && <p className={formStyles.success}>Your digital card has been created.</p>}
         {query.duplicated === "1" && <p className={formStyles.success}>A draft copy has been created.</p>}
         {query.contact === "added" && <p className={formStyles.success}>Contact method added.</p>}
+        {query.contact === "reordered" && <p className={formStyles.success}>Contact method order updated.</p>}
         {query.social === "added" && <p className={formStyles.success}>Social link added.</p>}
         {query.template === "updated" && <p className={formStyles.success}>Your card design has been updated.</p>}
         {query.media === "uploaded" && <p className={formStyles.success}>{query.mediaType?.replaceAll("_", " ").toLowerCase()} uploaded successfully.</p>}
@@ -228,14 +230,28 @@ export default async function EditCardPage({ params, searchParams }: EditCardPag
           </div>
           {card.contactMethods.length > 0 ? (
             <div className={formStyles.records}>
-              {card.contactMethods.map((method) => (
+              {card.contactMethods.map((method, index) => (
                 <div className={formStyles.record} key={method.id}>
-                  <div><strong>{method.label || method.type.toLowerCase()}</strong><span>{method.value}</span></div>
-                  <form action={removeContactMethod}>
+                  <div className={formStyles.recordDetails}><strong>{method.label || method.type.toLowerCase()}</strong><span>{method.value}</span></div>
+                  <div className={formStyles.recordActions}>
+                    <form action={moveContactMethod}>
+                      <input type="hidden" name="cardId" value={card.id} />
+                      <input type="hidden" name="methodId" value={method.id} />
+                      <input type="hidden" name="direction" value="up" />
+                      <button className={formStyles.moveButton} type="submit" disabled={index === 0} aria-label={"Move " + method.value + " up"} title="Move up">↑</button>
+                    </form>
+                    <form action={moveContactMethod}>
+                      <input type="hidden" name="cardId" value={card.id} />
+                      <input type="hidden" name="methodId" value={method.id} />
+                      <input type="hidden" name="direction" value="down" />
+                      <button className={formStyles.moveButton} type="submit" disabled={index === card.contactMethods.length - 1} aria-label={"Move " + method.value + " down"} title="Move down">↓</button>
+                    </form>
+                    <form action={removeContactMethod}>
                     <input type="hidden" name="cardId" value={card.id} />
                     <input type="hidden" name="methodId" value={method.id} />
                     <button className={formStyles.removeButton} type="submit" aria-label={"Remove " + method.value}>Remove</button>
-                  </form>
+                    </form>
+                  </div>
                 </div>
               ))}
             </div>
